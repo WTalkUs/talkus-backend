@@ -25,9 +25,9 @@ func InitFirebase() (*FirebaseApp, error) {
 	_ = godotenv.Load()
 
 	// Obtener la ruta de credenciales desde la variable de entorno
-	credFile := os.Getenv("FIREBASE_CREDENTIALS_PATH")
+	credFile := os.Getenv("FIREBASE_CREDENTIALS")
 	if credFile == "" {
-		log.Fatalf("❌ No se encontró FIREBASE_CREDENTIALS_PATH en las variables de entorno")
+		log.Fatalf("❌ No se encontró FIREBASE_CREDENTIALS en las variables de entorno")
 		return nil, nil
 	}
 
