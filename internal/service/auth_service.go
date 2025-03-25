@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"firebase.google.com/go/v4/auth"
 	"github.com/JuanPidarraga/talkus-backend/config"
@@ -47,4 +48,48 @@ func(s *AuthService) GetUserProfile(ctx context.Context, uid string) (*models.Us
 		UID:    user.UID,	
 		Email: user.Email,
 	}, nil
+}
+
+func (s *AuthService) RegisterUser(ctx context.Context, email, password string) (*auth.UserRecord, error) {
+    // Definir los parámetros para crear el usuario
+    params := (&auth.UserToCreate{}).
+        Email(email).
+        Password(password)
+    
+    // Crear el usuario en Firebase Authentication
+    userRecord, err := s.firebase.Auth.CreateUser(ctx, params)
+    if err != nil {
+        return nil, err
+    }
+
+    return userRecord, nil
+}
+
+func (s *AuthService) SaveUserInFirestore(ctx context.Context, user *auth.UserRecord) error {
+    // Define el documento a almacenar
+    doc := map[string]interface{}{
+        "uid":       user.UID,
+        "email":     user.Email,
+        "createdAt": time.Now(),
+    }
+
+    // Guarda el documento en la colección "users", usando el UID como documento ID
+    _, err := s.firebase.Firestore.Collection("users").Doc(user.UID).Set(ctx, doc)
+    return err
+}
+
+func (s *AuthService) RegisterAndSaveUser(ctx context.Context, email, password string) (*auth.UserRecord, error) {
+    // 1. Crear el usuario en Firebase Auth
+    userRecord, err := s.RegisterUser(ctx, email, password)
+    if err != nil {
+        return nil, err
+    }
+
+    // 2. Guardar información adicional en Firestore
+    err = s.SaveUserInFirestore(ctx, userRecord)
+    if err != nil {
+        return nil, err
+    }
+
+    return userRecord, nil
 }

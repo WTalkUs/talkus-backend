@@ -29,16 +29,23 @@ func main() {
     authHandler := handlers.NewAuthHandler(authService)
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 
+	userRepo := repositories.NewUserRepository(firebaseApp.Firestore)
+	userUsecase := usecases.NewUserUsecase(userRepo)
+	userController := controllers.NewUserController(userUsecase)
+
+
 	// Usar Gorilla Mux para definir rutas
 	router := mux.NewRouter()
 
 	publicRouter := router.PathPrefix("/public").Subrouter()
+	publicRouter.HandleFunc("/register", authHandler.Register).Methods("POST")
+	publicRouter.HandleFunc("/users", userController.GetUser).Methods("GET")
+
 
 	protectedRouter := router.PathPrefix("/api").Subrouter()
 	protectedRouter.Use(authMiddleware.Authenticate)
 	protectedRouter.HandleFunc("/profile", authHandler.GetUserProfile)
 
-	
 	
 
 	corsOptions := cors.Options{
@@ -53,16 +60,6 @@ func main() {
 	handler := cors.New(corsOptions).Handler(router)
 	serverPort := ":8080"
 
-	// 1. Repositorio
-	userRepo := repositories.NewUserRepository(firebaseApp.Firestore)
-	// 2. Usecase (lógica de negocio)
-	userUsecase := usecases.NewUserUsecase(userRepo)
-	// 3. Controller (HTTP handlers)
-	userController := controllers.NewUserController(userUsecase)
-
-	
-	// Registro de ruta para obtener usuario
-	publicRouter.HandleFunc("/users", userController.GetUser).Methods("GET")
 
 	router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 		path, err := route.GetPathTemplate()
