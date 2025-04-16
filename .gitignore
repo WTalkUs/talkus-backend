@@ -1,4 +1,2 @@
 .env
-go.sum
-go.mod
 firebaseCredentials.json

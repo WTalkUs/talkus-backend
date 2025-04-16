@@ -1,22 +1,22 @@
 package main
 
 import (
-	"context"
 	"log"
 	"net/http"
 
-
 	"github.com/gorilla/mux"
-
+	"github.com/rs/cors"
 
 	"github.com/JuanPidarraga/talkus-backend/config"
 	"github.com/JuanPidarraga/talkus-backend/internal/controllers"
+	"github.com/JuanPidarraga/talkus-backend/internal/handlers"
+	"github.com/JuanPidarraga/talkus-backend/internal/middleware"
 	"github.com/JuanPidarraga/talkus-backend/internal/repositories"
+	"github.com/JuanPidarraga/talkus-backend/internal/service"
 	"github.com/JuanPidarraga/talkus-backend/internal/usecases"
 )
 
 func main() {
-	ctx := context.Background()
 
 	// Inicializar Firebase (con credenciales definidas en la variable de entorno FIREBASE_CREDENTIALS_PATH)
 	firebaseApp, err := config.InitFirebase()
@@ -25,27 +25,52 @@ func main() {
 	}
 	defer firebaseApp.Firestore.Close()
 
-	// Verificar conexión (opcional, para debug)
-	docs, err := firebaseApp.Firestore.Collection("users").Documents(ctx).GetAll()
-	if err != nil {
-		log.Fatalf("Error accediendo a Firestore: %v", err)
-	}
-	log.Printf("Conexión exitosa. Usuarios en Firestore: %d", len(docs))
+	authService := service.NewAuthService(firebaseApp)
+    authHandler := handlers.NewAuthHandler(authService)
+	authMiddleware := middleware.NewAuthMiddleware(authService)
 
-	// Inicialización de las capas según Clean Architecture:
-	// 1. Repositorio
 	userRepo := repositories.NewUserRepository(firebaseApp.Firestore)
-	// 2. Usecase (lógica de negocio)
 	userUsecase := usecases.NewUserUsecase(userRepo)
-	// 3. Controller (HTTP handlers)
 	userController := controllers.NewUserController(userUsecase)
+
 
 	// Usar Gorilla Mux para definir rutas
 	router := mux.NewRouter()
-	// Registro de ruta para obtener usuario
-	router.HandleFunc("/users", userController.GetUser).Methods("GET")
+
+	publicRouter := router.PathPrefix("/public").Subrouter()
+	publicRouter.HandleFunc("/register", authHandler.Register).Methods("POST")
+	publicRouter.HandleFunc("/users", userController.GetUser).Methods("GET")
+
+
+	protectedRouter := router.PathPrefix("/api").Subrouter()
+	protectedRouter.Use(authMiddleware.Authenticate)
+	protectedRouter.HandleFunc("/profile", authHandler.GetUserProfile)
+
+	
+
+	corsOptions := cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedHeaders: []string{"Acccept", "Content-Type", "Authorization", "X-Requested-With"},
+		ExposedHeaders: []string{"Content-Length","Content-Type"},
+		AllowCredentials: true,
+		MaxAge: 300,
+	}
+
+	handler := cors.New(corsOptions).Handler(router)
+	serverPort := ":8080"
+
+
+	router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+		path, err := route.GetPathTemplate()
+		if err == nil {
+			log.Println("Ruta registrada:", path)
+		}
+		return nil
+	})
+	
 
 	// Iniciar servidor HTTP
 	log.Println("🚀 Servidor corriendo en http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(serverPort, handler))
 }
