@@ -1,9 +1,13 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"os"
 	"time"
 
 	"firebase.google.com/go/v4/auth"
@@ -95,4 +99,37 @@ func (s *AuthService) RegisterAndSaveUser(ctx context.Context, username string, 
 	}
 
 	return userRecord, nil
+}
+
+func (s *AuthService) SendResetEmail(email string) error {
+	apiKey := os.Getenv("FIREBASE_WEB_API_KEY")
+	if apiKey == "" {
+		return fmt.Errorf("FIREBASE_WEB_API_KEY no está configurada")
+	}
+
+	url := "https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=" + apiKey
+
+	body := map[string]string{
+		"requestType": "PASSWORD_RESET",
+		"email":       email,
+	}
+
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		var errorBody map[string]interface{}
+		json.NewDecoder(resp.Body).Decode(&errorBody)
+		return fmt.Errorf("firebase error: %v", errorBody)
+	}
+
+	return nil
 }
