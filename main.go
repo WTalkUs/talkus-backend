@@ -25,6 +25,7 @@ func main() {
 	}
 	defer firebaseApp.Firestore.Close()
 
+
 	authService := service.NewAuthService(firebaseApp)
 	authHandler := handlers.NewAuthHandler(authService)
 	authMiddleware := middleware.NewAuthMiddleware(authService)
@@ -33,6 +34,11 @@ func main() {
 	userUsecase := usecases.NewUserUsecase(userRepo)
 	userController := controllers.NewUserController(userUsecase)
 
+	// Post layer
+	postRepo := repositories.NewPostRepository(firebaseApp.Firestore)
+	postUsecase := usecases.NewPostUsecase(postRepo)
+	postController := controllers.NewPostController(postUsecase)
+
 	// Usar Gorilla Mux para definir rutas
 	router := mux.NewRouter()
 
@@ -40,10 +46,12 @@ func main() {
 	publicRouter.HandleFunc("/register", authHandler.Register).Methods("POST")
 	publicRouter.HandleFunc("/users", userController.GetUser).Methods("GET")
 	publicRouter.HandleFunc("/forgot-password", handlers.ForgotPasswordHandler(authService)).Methods("POST")
+	publicRouter.HandleFunc("/posts", postController.GetAll).Methods("GET")
 
 	protectedRouter := router.PathPrefix("/api").Subrouter()
 	protectedRouter.Use(authMiddleware.Authenticate)
 	protectedRouter.HandleFunc("/profile", authHandler.GetUserProfile)
+	
 
 	corsOptions := cors.Options{
 		AllowedOrigins:   []string{"*"},
@@ -53,7 +61,7 @@ func main() {
 		AllowCredentials: true,
 		MaxAge:           300,
 	}
-
+	
 	handler := cors.New(corsOptions).Handler(router)
 	serverPort := ":8080"
 
