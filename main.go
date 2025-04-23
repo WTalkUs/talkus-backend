@@ -6,8 +6,10 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
+	httpSwagger "github.com/swaggo/http-swagger"
 
 	"github.com/JuanPidarraga/talkus-backend/config"
+	_ "github.com/JuanPidarraga/talkus-backend/docs"
 	"github.com/JuanPidarraga/talkus-backend/internal/controllers"
 	"github.com/JuanPidarraga/talkus-backend/internal/handlers"
 	"github.com/JuanPidarraga/talkus-backend/internal/middleware"
@@ -24,7 +26,6 @@ func main() {
 		log.Fatalf("Error inicializando Firebase: %v", err)
 	}
 	defer firebaseApp.Firestore.Close()
-
 
 	authService := service.NewAuthService(firebaseApp)
 	authHandler := handlers.NewAuthHandler(authService)
@@ -51,7 +52,6 @@ func main() {
 	protectedRouter := router.PathPrefix("/api").Subrouter()
 	protectedRouter.Use(authMiddleware.Authenticate)
 	protectedRouter.HandleFunc("/profile", authHandler.GetUserProfile)
-	
 
 	corsOptions := cors.Options{
 		AllowedOrigins:   []string{"*"},
@@ -61,7 +61,7 @@ func main() {
 		AllowCredentials: true,
 		MaxAge:           300,
 	}
-	
+
 	handler := cors.New(corsOptions).Handler(router)
 	serverPort := ":8080"
 
@@ -73,7 +73,10 @@ func main() {
 		return nil
 	})
 
+	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
+
 	// Iniciar servidor HTTP
 	log.Println("🚀 Servidor corriendo en http://localhost:8080")
 	log.Fatal(http.ListenAndServe(serverPort, handler))
+
 }
