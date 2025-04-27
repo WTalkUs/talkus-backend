@@ -26,7 +26,7 @@ func (r *UserRepository) GetUserByID(ctx context.Context, userID string) (map[st
 	return doc.Data(), nil
 }
 
-// (Opcional) CreateUser permite crear un usuario.
+//CreateUser permite crear un usuario.
 func (r *UserRepository) CreateUser(ctx context.Context, userID string, userData map[string]interface{}) error {
 	_, err := r.db.Collection("users").Doc(userID).Set(ctx, userData)
 	return err
