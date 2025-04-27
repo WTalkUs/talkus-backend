@@ -42,6 +42,17 @@ definitions:
       updated_at:
         type: string
     type: object
+  models.User:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      uid:
+        type: string
+      username:
+        type: string
+    type: object
 info:
   contact: {}
 paths:
@@ -185,4 +196,43 @@ paths:
       summary: Crear una nueva publicación
       tags:
       - Post
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Recupera un usuario de la base de datos utilizando su ID.
+      parameters:
+      - description: ID del usuario a recuperar
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Usuario encontrado
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Parámetro 'id' faltante
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Usuario no encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Error interno del servidor
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Obtener un usuario por ID
+      tags:
+      - User
 swagger: "2.0"

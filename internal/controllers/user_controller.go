@@ -19,8 +19,17 @@ func NewUserController(usecase *usecases.UserUsecase) *UserController {
 	return &UserController{usecase: usecase}
 }
 
-// GetUser maneja la petición GET para obtener un usuario por su ID.
-// Ejemplo de petición: GET http://localhost:8080/users?id=<userID>
+// @Summary Obtener un usuario por ID
+// @Description Recupera un usuario de la base de datos utilizando su ID.
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param id query string true "ID del usuario a recuperar"
+// @Success 200 {object} models.User "Usuario encontrado"
+// @Failure 400 {object} map[string]string "Parámetro 'id' faltante"
+// @Failure 404 {object} map[string]string "Usuario no encontrado"
+// @Failure 500 {object} map[string]string "Error interno del servidor"
+// @Router /users [get]
 func (c *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	userID := r.URL.Query().Get("id")
