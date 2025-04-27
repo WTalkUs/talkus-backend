@@ -29,17 +29,15 @@ func main() {
 	}
 	defer firebaseApp.Firestore.Close()
 
-
 	// Inicializar Cloudinary (con credenciales definidas en la variable de entorno CLOUDINARY_URL)
-		cld, err := cloudinary.NewFromParams(
-			os.Getenv("CLOUDINARY_CLOUD_NAME"),
-			os.Getenv("CLOUDINARY_API_KEY"),
-			os.Getenv("CLOUDINARY_API_SECRET"),
-		)
-		if err != nil {
-			log.Fatalf("Error iniciando Cloudinary: %v", err)
-		}
-
+	cld, err := cloudinary.NewFromParams(
+		os.Getenv("CLOUDINARY_CLOUD_NAME"),
+		os.Getenv("CLOUDINARY_API_KEY"),
+		os.Getenv("CLOUDINARY_API_SECRET"),
+	)
+	if err != nil {
+		log.Fatalf("Error iniciando Cloudinary: %v", err)
+	}
 
 	authService := service.NewAuthService(firebaseApp)
 	authHandler := handlers.NewAuthHandler(authService)
@@ -92,6 +90,7 @@ func main() {
 
 	// Iniciar servidor HTTP
 	log.Println("🚀 Servidor corriendo en http://localhost:8080")
+	log.Println("📚 Swagger UI en http://localhost:8080/swagger/index.html")
 	log.Fatal(http.ListenAndServe(serverPort, handler))
 
 }

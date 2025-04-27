@@ -24,6 +24,14 @@ func NewPostController(u *usecases.PostUsecase, cld *cloudinary.Cloudinary) *Pos
 	return &PostController{postUsecase: u, cld: cld}
 }
 
+// @Summary Obtener todas las publicaciones
+// @Description Obtiene una lista de todas las publicaciones ordenadas por fecha de creación.
+// @Tags Post
+// @Accept json
+// @Produce json
+// @Success 200 {array} models.Post "Lista de publicaciones"
+// @Failure 500 {object} map[string]string "Error interno del servidor"
+// @Router /publications [get]
 func (c *PostController) GetAll(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	posts, err := c.postUsecase.GetAllPosts(ctx)
@@ -42,6 +50,18 @@ func (c *PostController) GetAll(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(posts)
 }
 
+// @Summary Crear una nueva publicación
+// @Description Permite crear una nueva publicación con un título, contenido y una imagen opcional. La imagen se sube a Cloudinary y se guarda la URL en la publicación.
+// @Tags Post
+// @Accept multipart/form-data
+// @Produce json
+// @Param title formData string true "Título de la publicación"
+// @Param content formData string true "Contenido de la publicación"
+// @Param image formData file false "Imagen para la publicación"
+// @Success 201 {object} models.Post "Publicación creada exitosamente"
+// @Failure 400 {object} map[string]string "Solicitud inválida, título o contenido faltante"
+// @Failure 500 {object} map[string]string "Error interno al crear la publicación"
+// @Router /publications [post]
 func (c *PostController) Create(w http.ResponseWriter, r *http.Request) {
 	//comprobar Content-Type y parsear form
 	ct := r.Header.Get("Content-Type")

@@ -13,6 +13,35 @@ definitions:
       username:
         type: string
     type: object
+  models.Post:
+    properties:
+      author_id:
+        type: string
+      content:
+        type: string
+      created_at:
+        type: string
+      dislikes:
+        type: integer
+      forum_id:
+        type: string
+      id:
+        type: string
+      image_url:
+        type: string
+      is_flagged:
+        type: boolean
+      likes:
+        type: integer
+      tags:
+        items:
+          type: string
+        type: array
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
 info:
   contact: {}
 paths:
@@ -89,4 +118,71 @@ paths:
       summary: Registrar un nuevo usuario
       tags:
       - Auth
+  /publications:
+    get:
+      consumes:
+      - application/json
+      description: Obtiene una lista de todas las publicaciones ordenadas por fecha
+        de creación.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de publicaciones
+          schema:
+            items:
+              $ref: '#/definitions/models.Post'
+            type: array
+        "500":
+          description: Error interno del servidor
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Obtener todas las publicaciones
+      tags:
+      - Post
+    post:
+      consumes:
+      - multipart/form-data
+      description: Permite crear una nueva publicación con un título, contenido y
+        una imagen opcional. La imagen se sube a Cloudinary y se guarda la URL en
+        la publicación.
+      parameters:
+      - description: Título de la publicación
+        in: formData
+        name: title
+        required: true
+        type: string
+      - description: Contenido de la publicación
+        in: formData
+        name: content
+        required: true
+        type: string
+      - description: Imagen para la publicación
+        in: formData
+        name: image
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Publicación creada exitosamente
+          schema:
+            $ref: '#/definitions/models.Post'
+        "400":
+          description: Solicitud inválida, título o contenido faltante
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Error interno al crear la publicación
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Crear una nueva publicación
+      tags:
+      - Post
 swagger: "2.0"
