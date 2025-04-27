@@ -1,0 +1,92 @@
+definitions:
+  handlers.ForgotPasswordRequest:
+    properties:
+      email:
+        type: string
+    type: object
+  handlers.RegisterRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /public/forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: Envía un enlace de recuperación de contraseña al correo electrónico
+        proporcionado.
+      parameters:
+      - description: Correo electrónico del usuario
+        in: body
+        name: email
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ForgotPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Enlace de recuperación enviado correctamente
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: 'Solicitud inválida: el email es obligatorio'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Error interno al enviar el enlace de recuperación
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Recuperación de contraseña
+      tags:
+      - Auth
+  /public/register:
+    post:
+      consumes:
+      - application/json
+      description: Permite registrar un nuevo usuario con su correo y contraseña
+      parameters:
+      - description: Datos del usuario a registrar
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Usuario creado exitosamente
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: 'Solicitud incorrecta: los datos no son válidos'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Error interno al registrar el usuario
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Registrar un nuevo usuario
+      tags:
+      - Auth
+swagger: "2.0"

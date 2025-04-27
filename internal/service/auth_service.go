@@ -127,8 +127,9 @@ func (s *AuthService) SendResetEmail(email string) error {
 
 	if resp.StatusCode != 200 {
 		var errorBody map[string]interface{}
-		json.NewDecoder(resp.Body).Decode(&errorBody)
-		return fmt.Errorf("firebase error: %v", errorBody)
+		if err := json.NewDecoder(resp.Body).Decode(&errorBody); err != nil {
+			return fmt.Errorf("failed to decode error response: %v", err)
+		}
 	}
 
 	return nil
