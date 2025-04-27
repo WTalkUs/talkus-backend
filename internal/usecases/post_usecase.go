@@ -17,3 +17,10 @@ func NewPostUsecase(repo *repositories.PostRepository) *PostUsecase {
 func (u *PostUsecase) GetAllPosts(ctx context.Context) ([]*models.Post, error) {
     return u.repo.GetAll(ctx)
 }
+
+func (u *PostUsecase) CreatePost(ctx context.Context, p *models.Post) (*models.Post, error) {
+    if err := u.repo.Create(ctx, p); err != nil {
+        return nil, err
+    }
+    return p, nil
+}

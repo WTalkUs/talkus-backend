@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
@@ -16,6 +17,7 @@ import (
 	"github.com/JuanPidarraga/talkus-backend/internal/repositories"
 	"github.com/JuanPidarraga/talkus-backend/internal/service"
 	"github.com/JuanPidarraga/talkus-backend/internal/usecases"
+	"github.com/cloudinary/cloudinary-go/v2"
 )
 
 func main() {
@@ -26,6 +28,18 @@ func main() {
 		log.Fatalf("Error inicializando Firebase: %v", err)
 	}
 	defer firebaseApp.Firestore.Close()
+
+
+	// Inicializar Cloudinary (con credenciales definidas en la variable de entorno CLOUDINARY_URL)
+		cld, err := cloudinary.NewFromParams(
+			os.Getenv("CLOUDINARY_CLOUD_NAME"),
+			os.Getenv("CLOUDINARY_API_KEY"),
+			os.Getenv("CLOUDINARY_API_SECRET"),
+		)
+		if err != nil {
+			log.Fatalf("Error iniciando Cloudinary: %v", err)
+		}
+
 
 	authService := service.NewAuthService(firebaseApp)
 	authHandler := handlers.NewAuthHandler(authService)
@@ -38,7 +52,7 @@ func main() {
 	// Post layer
 	postRepo := repositories.NewPostRepository(firebaseApp.Firestore)
 	postUsecase := usecases.NewPostUsecase(postRepo)
-	postController := controllers.NewPostController(postUsecase)
+	postController := controllers.NewPostController(postUsecase, cld)
 
 	// Usar Gorilla Mux para definir rutas
 	router := mux.NewRouter()
@@ -48,6 +62,7 @@ func main() {
 	publicRouter.HandleFunc("/users", userController.GetUser).Methods("GET")
 	publicRouter.HandleFunc("/forgot-password", handlers.ForgotPasswordHandler(authService)).Methods("POST")
 	publicRouter.HandleFunc("/posts", postController.GetAll).Methods("GET")
+	publicRouter.HandleFunc("/posts", postController.Create).Methods("POST")
 
 	protectedRouter := router.PathPrefix("/api").Subrouter()
 	protectedRouter.Use(authMiddleware.Authenticate)
