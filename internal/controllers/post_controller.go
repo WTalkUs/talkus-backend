@@ -31,7 +31,7 @@ func NewPostController(u *usecases.PostUsecase, cld *cloudinary.Cloudinary) *Pos
 // @Produce json
 // @Success 200 {array} models.Post "Lista de publicaciones"
 // @Failure 500 {object} map[string]string "Error interno del servidor"
-// @Router /publications [get]
+// @Router /public/posts [get]
 func (c *PostController) GetAll(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	posts, err := c.postUsecase.GetAllPosts(ctx)
@@ -61,7 +61,7 @@ func (c *PostController) GetAll(w http.ResponseWriter, r *http.Request) {
 // @Success 201 {object} models.Post "Publicación creada exitosamente"
 // @Failure 400 {object} map[string]string "Solicitud inválida, título o contenido faltante"
 // @Failure 500 {object} map[string]string "Error interno al crear la publicación"
-// @Router /publications [post]
+// @Router /public/posts [post]
 func (c *PostController) Create(w http.ResponseWriter, r *http.Request) {
 	//comprobar Content-Type y parsear form
 	ct := r.Header.Get("Content-Type")

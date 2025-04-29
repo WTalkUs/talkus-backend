@@ -29,7 +29,7 @@ func NewUserController(usecase *usecases.UserUsecase) *UserController {
 // @Failure 400 {object} map[string]string "Parámetro 'id' faltante"
 // @Failure 404 {object} map[string]string "Usuario no encontrado"
 // @Failure 500 {object} map[string]string "Error interno del servidor"
-// @Router /users [get]
+// @Router /public/users [get]
 func (c *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	userID := r.URL.Query().Get("id")
