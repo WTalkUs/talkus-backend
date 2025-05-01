@@ -58,8 +58,8 @@ func (r *PostRepository) Create(ctx context.Context, p *models.Post) error {
 		//"forum_id":  p.ForumID,
 		"likes":     p.Likes,
 		"dislikes":  p.Dislikes,
-		"imageUrl":  p.ImageURL,
-		"createdAt": p.CreatedAt,
+		"image_url":  p.ImageURL,
+		"created_at": p.CreatedAt,
 	})
 	if err != nil {
 		return err

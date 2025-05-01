@@ -7,12 +7,10 @@ import (
 	"github.com/JuanPidarraga/talkus-backend/internal/repositories"
 )
 
-// UserUsecase contiene la lógica de negocio para los usuarios.
 type UserUsecase struct {
 	repo *repositories.UserRepository
 }
 
-// NewUserUsecase crea una nueva instancia de UserUsecase.
 func NewUserUsecase(repo *repositories.UserRepository) *UserUsecase {
 	return &UserUsecase{repo: repo}
 }
