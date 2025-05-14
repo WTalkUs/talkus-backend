@@ -100,10 +100,18 @@ func (c *PostController) Create(w http.ResponseWriter, r *http.Request) {
 		imageURL = res.SecureURL
 	}
 
+	authorID := r.FormValue("author_id")
+	if authorID == "" {
+		http.Error(w, "author_id es obligatorio", http.StatusBadRequest)
+		return
+	}
+
 	//crear el modelo
 	now := time.Now()
+	
 	post := &models.Post{
 		Title:     title,
+		AuthorID:  authorID,
 		Content:   content,
 		ImageURL:  imageURL,
 		Likes:     0,
@@ -113,15 +121,12 @@ func (c *PostController) Create(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: now,
 	}
 
-	// 5) guardar
 	created, err := c.postUsecase.CreatePost(r.Context(), post)
 	if err != nil {
 		log.Printf("Error creando post: %v", err)
 		http.Error(w, "No se pudo crear el post", http.StatusInternalServerError)
 		return
 	}
-
-	// 6) devolver JSON
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(created)

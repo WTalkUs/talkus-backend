@@ -5,6 +5,7 @@ import "time"
 type Post struct {
 	ID        string    `firestore:"-"             json:"id"`          
 	AuthorID  string    `firestore:"author_id"     json:"author_id"`
+	Author    *User     `firestore:"-"             json:"author"` 
 	Title     string    `firestore:"title"         json:"title"`
 	Content   string    `firestore:"content"       json:"content"`
 	CreatedAt time.Time `firestore:"created_at"    json:"created_at"`
