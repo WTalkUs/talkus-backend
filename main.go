@@ -65,6 +65,7 @@ func main() {
 	protectedRouter := router.PathPrefix("/api").Subrouter()
 	protectedRouter.Use(authMiddleware.Authenticate)
 	protectedRouter.HandleFunc("/profile", authHandler.GetUserProfile)
+	protectedRouter.HandleFunc("/posts", postController.Delete).Methods("DELETE")
 
 	corsOptions := cors.Options{
 		AllowedOrigins:   []string{"*"},

@@ -24,3 +24,7 @@ func (u *PostUsecase) CreatePost(ctx context.Context, p *models.Post) (*models.P
     }
     return p, nil
 }
+
+func (u *PostUsecase) DeletePost(ctx context.Context, id string) error {
+    return u.repo.Delete(ctx, id)
+}

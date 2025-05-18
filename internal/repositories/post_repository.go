@@ -99,3 +99,11 @@ func (r *PostRepository) Create(ctx context.Context, p *models.Post) error {
 	p.ID = doc.ID
 	return nil
 }
+
+func (r *PostRepository) Delete(ctx context.Context, id string) error {
+	_, err := r.db.Collection("posts").Doc(id).Delete(ctx)
+	if err != nil {
+		return fmt.Errorf("error al eliminar el post: %w", err)
+	}
+	return nil
+}

@@ -131,3 +131,21 @@ func (c *PostController) Create(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(created)
 }
+
+func (c *PostController) Delete(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		http.Error(w, "ID de la publicación es obligatorio", http.StatusBadRequest)
+		return
+	}
+
+	err := c.postUsecase.DeletePost(ctx, id)
+	if err != nil {
+		log.Printf("Error eliminando post: %v", err)
+		http.Error(w, "No se pudo eliminar el post", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
