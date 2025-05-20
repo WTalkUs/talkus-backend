@@ -14,6 +14,7 @@ type Post struct {
 	IsFlagged bool     `firestore:"is_flagged"    json:"is_flagged"`
 	ForumID   string    `firestore:"forum_id"      json:"forum_id"`
 	ImageURL  string    `firestore:"image_url"     json:"image_url"`
+	ImageID  string 	`firestore:"image_id"      json:"image_id"`       
 	Likes     int       `firestore:"likes"         json:"likes"`
 	Dislikes  int       `firestore:"dislikes"      json:"dislikes"`
 }

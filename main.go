@@ -66,6 +66,7 @@ func main() {
 	protectedRouter.Use(authMiddleware.Authenticate)
 	protectedRouter.HandleFunc("/profile", authHandler.GetUserProfile)
 	protectedRouter.HandleFunc("/posts", postController.Delete).Methods("DELETE")
+	protectedRouter.HandleFunc("/posts", postController.Edit).Methods("PUT")
 
 	corsOptions := cors.Options{
 		AllowedOrigins:   []string{"*"},

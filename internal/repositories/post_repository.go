@@ -18,6 +18,21 @@ func NewPostRepository(db *firestore.Client) *PostRepository {
 	return &PostRepository{db: db}
 }
 
+func (r *PostRepository) GetPostByID(ctx context.Context, id string) (*models.Post, error) {
+	doc, err := r.db.Collection("posts").Doc(id).Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error al obtener el post por ID: %w", err)
+	}
+	var p models.Post
+	// Decodifica los campos del documento en el struct
+	if err := doc.DataTo(&p); err != nil {
+		return nil, fmt.Errorf("error al decodificar el post: %w", err)
+	}
+	// Asigna el ID del documento
+	p.ID = doc.Ref.ID
+	return &p, nil
+}
+
 func (r *PostRepository) GetAll(ctx context.Context) ([]*models.Post, error) {
 	iter := r.db.
 		Collection("posts").
@@ -82,15 +97,16 @@ func (r *PostRepository) GetAll(ctx context.Context) ([]*models.Post, error) {
 func (r *PostRepository) Create(ctx context.Context, p *models.Post) error {
 	p.CreatedAt = time.Now()
 	doc, _, err := r.db.Collection("posts").Add(ctx, map[string]interface{}{
-		"title":   p.Title,
-		"content": p.Content,
+		"title":     p.Title,
+		"content":   p.Content,
 		"author_id": p.AuthorID,
 		//"tags":      p.Tags,
 		"is_flagged": p.IsFlagged,
 		//"forum_id":  p.ForumID,
-		"likes":     p.Likes,
-		"dislikes":  p.Dislikes,
+		"likes":      p.Likes,
+		"dislikes":   p.Dislikes,
 		"image_url":  p.ImageURL,
+		"image_id":   p.ImageID,
 		"created_at": p.CreatedAt,
 	})
 	if err != nil {
@@ -104,6 +120,22 @@ func (r *PostRepository) Delete(ctx context.Context, id string) error {
 	_, err := r.db.Collection("posts").Doc(id).Delete(ctx)
 	if err != nil {
 		return fmt.Errorf("error al eliminar el post: %w", err)
+	}
+	return nil
+}
+
+func (r *PostRepository) Edit(ctx context.Context, id string, p *models.Post) error {
+	_, err := r.db.Collection("posts").Doc(id).Set(ctx, map[string]interface{}{
+		"title":   p.Title,
+		"content": p.Content,
+		//"author_id":  p.AuthorID,
+		//"tags":      p.Tags,
+		//"forum_id":  p.ForumID,
+		"image_id":  p.ImageID,
+		"image_url": p.ImageURL,
+	}, firestore.MergeAll)
+	if err != nil {
+		return fmt.Errorf("error al editar el post: %w", err)
 	}
 	return nil
 }

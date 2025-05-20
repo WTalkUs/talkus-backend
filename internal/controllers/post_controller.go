@@ -84,6 +84,7 @@ func (c *PostController) Create(w http.ResponseWriter, r *http.Request) {
 
 	//subir imagen
 	var imageURL string
+	var ImageID string
 	file, _, err := r.FormFile("image")
 	if err == nil {
 		defer file.Close()
@@ -98,6 +99,7 @@ func (c *PostController) Create(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		imageURL = res.SecureURL
+		ImageID  = res.PublicID
 	}
 
 	authorID := r.FormValue("author_id")
@@ -114,6 +116,7 @@ func (c *PostController) Create(w http.ResponseWriter, r *http.Request) {
 		AuthorID:  authorID,
 		Content:   content,
 		ImageURL:  imageURL,
+		ImageID:   ImageID,
 		Likes:     0,
 		Dislikes:  0,
 		IsFlagged: false,
@@ -148,4 +151,87 @@ func (c *PostController) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (c *PostController) Edit(w http.ResponseWriter, r *http.Request) {
+    ctx := context.Background()
+
+    id := r.URL.Query().Get("id")
+    if id == "" {
+        http.Error(w, "ID de la publicación es obligatorio", http.StatusBadRequest)
+        return
+    }
+
+    // Recuperar post existente (para obtener ImageID)
+    oldPost, err := c.postUsecase.GetPostByID(ctx, id)
+    if err != nil {
+        http.Error(w, "No existe el post", http.StatusNotFound)
+        return
+    }
+
+    ct := r.Header.Get("Content-Type")
+    if !strings.HasPrefix(ct, "multipart/form-data") {
+        http.Error(w, "Content-Type debe ser multipart/form-data", http.StatusBadRequest)
+        return
+    }
+    if err := r.ParseMultipartForm(10 << 20); err != nil {
+        http.Error(w, "Error parsing form: "+err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    title   := r.FormValue("title")
+    content := r.FormValue("content")
+
+    update := &models.Post{}
+    if title != "" {
+        update.Title = title
+    }
+    if content != "" {
+        update.Content = content
+    }
+
+    // Procesar nueva imagen si viene
+    file, _, errFile := r.FormFile("image")
+    if errFile == nil {
+        defer file.Close()
+
+        // Destruir imagen antigua
+        if oldPost.ImageID != "" {
+            if _, err := c.cld.Upload.Destroy(ctx, uploader.DestroyParams{
+				PublicID: oldPost.ImageID,
+				Invalidate: func(b bool) *bool { return &b }(true),
+            }); err != nil {
+                log.Printf("no se pudo borrar imagen antigua: %v", err)
+            }
+        }
+
+        // Subir nueva imagen
+        uploadParams := uploader.UploadParams{
+            Folder:   "posts_images",
+            PublicID: fmt.Sprintf("post_%d", time.Now().Unix()),
+            Overwrite: func(b bool) *bool { return &b }(true),
+        }
+        res, errUp := c.cld.Upload.Upload(ctx, file, uploadParams)
+        if errUp != nil {
+            http.Error(w, "Error subiendo imagen: "+errUp.Error(), http.StatusInternalServerError)
+            return
+        }
+
+        update.ImageURL = res.SecureURL
+        update.ImageID  = res.PublicID
+    }else{
+		update.ImageURL = oldPost.ImageURL
+		update.ImageID  = oldPost.ImageID
+	}
+	
+
+
+
+    if err := c.postUsecase.EditPost(ctx, id, update); err != nil {
+        log.Printf("Error editando post: %v", err)
+        http.Error(w, "No se pudo editar el post", http.StatusInternalServerError)
+        return
+    }
+
+    w.WriteHeader(http.StatusNoContent)
 }
