@@ -13,6 +13,7 @@ import (
 	"github.com/JuanPidarraga/talkus-backend/internal/usecases"
 	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
+	"github.com/gorilla/mux"
 )
 
 type PostController struct {
@@ -234,4 +235,25 @@ func (c *PostController) Edit(w http.ResponseWriter, r *http.Request) {
     }
 
     w.WriteHeader(http.StatusNoContent)
+}
+
+func (c *PostController) GetByID(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+    vars := mux.Vars(r)
+    id, ok := vars["id"]
+    if !ok || id == "" {
+        http.Error(w, "ID de la publicación es obligatorio", http.StatusBadRequest)
+        return
+    }
+
+    post, err := c.postUsecase.GetPostByID(ctx, id)
+    if err != nil {
+        log.Printf("Error obteniendo post: %v", err)
+        http.Error(w, "No se pudo obtener el post", http.StatusInternalServerError)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+    json.NewEncoder(w).Encode(post)
 }

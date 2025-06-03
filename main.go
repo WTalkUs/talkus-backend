@@ -61,6 +61,7 @@ func main() {
 	publicRouter.HandleFunc("/forgot-password", handlers.ForgotPasswordHandler(authService)).Methods("POST")
 	publicRouter.HandleFunc("/posts", postController.GetAll).Methods("GET")
 	publicRouter.HandleFunc("/posts", postController.Create).Methods("POST")
+	publicRouter.HandleFunc("/post/{id}", postController.GetByID).Methods("GET")
 
 	protectedRouter := router.PathPrefix("/api").Subrouter()
 	protectedRouter.Use(authMiddleware.Authenticate)
