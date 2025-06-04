@@ -93,7 +93,7 @@ func main() {
 
 	// Iniciar servidor HTTP
 	log.Println("🚀 Servidor corriendo en http://localhost:8080")
-	// Mostrar el puerto en el que se está ejecutando el servidor
+	// Puerto en el que se está ejecutando el servidor
 	log.Println("📚 Swagger UI en http://localhost:8080/swagger/index.html")
 	log.Fatal(http.ListenAndServe(serverPort, handler))
 
