@@ -7,6 +7,8 @@ RUN go mod download
 
 COPY . .
 
+ARG FIREBASE_CREDENTIALS
+
 # Compila la aplicación
 RUN CGO_ENABLED=0 GOOS=linux go build -o /app/main .
 
@@ -14,6 +16,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /app/main .
 FROM alpine:3.21
 
 WORKDIR /app
+
+RUN echo "$FIREBASE_CREDENTIALS_B64" | base64 -d > /app/firebase.json
 
 COPY --from=builder /app/main .
 
