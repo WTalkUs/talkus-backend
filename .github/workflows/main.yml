@@ -20,6 +20,8 @@ jobs:
 
       # 👉 Build Docker image
       - name: Build Docker image
+        env:
+          DOCKER_BUILDKIT: 0
         run: |
           docker build \
             --build-arg FIREBASE_CREDENTIALS=${{ secrets.FIREBASE_CREDENTIALS }} \
@@ -28,7 +30,8 @@ jobs:
             --build-arg CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }} \
             --build-arg CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }} \
             -f Dockerfile \
-            -t ${{ secrets.DOCKER_USERNAME }}/talkus-backend-${{ github.event.number }}:${{ github.sha }} .
+            -t ${{ secrets.DOCKER_USERNAME }}/talkus-backend-${{ github.event.number }}:${{ github.sha }} \
+            .
 
       # 👉 Log in to DockerHub
       - name: DockerHub Login
