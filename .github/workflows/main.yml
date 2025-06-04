@@ -25,8 +25,8 @@ jobs:
             --build-arg FIREBASE_CREDENTIALS=${{ secrets.FIREBASE_CREDENTIALS }} \
             --build-arg FIREBASE_WEB_API_KEY=${{ secrets.FIREBASE_WEB_API_KEY }} \
             --build-arg CLOUDINARY_CLOUD_NAME=${{ secrets.NEXT_PUBLIC_API_URL }} \
-            --build-arg CLOUDINARY_API_KEY=${{ secrets.NEXT_PUBLIC_API_URL }} \
-            --build-arg CLOUDINARY_API_SECRET=${{ secrets.NEXT_PUBLIC_API_URL }} \
+            --build-arg CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }} \
+            --build-arg CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }} \
             -f Dockerfile -t ${{ secrets.DOCKER_USERNAME }}/talkus-backend-${{ github.event.number }}:${{ github.sha }} .
 
       # 👉 Log in to DockerHub
