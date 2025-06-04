@@ -21,8 +21,8 @@ jobs:
       # 👉 Build Docker image
       - name: Build Docker image
         run: |
+          set -x
           docker build \
-            echo "Credenciales de firebase: ${{ secrets.FIREBASE_CREDENTIALS }}"
             --build-arg FIREBASE_CREDENTIALS=${{ secrets.FIREBASE_CREDENTIALS }} \
             --build-arg FIREBASE_WEB_API_KEY=${{ secrets.FIREBASE_WEB_API_KEY }} \
             --build-arg CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }} \
