@@ -14,7 +14,7 @@ ARG CLOUDINARY_API_KEY
 ARG CLOUDINARY_API_SECRET
 
 # Compila la aplicación
-RUN CGO_ENABLED=0 GOOS=linux go build -o main .
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/main  .
 
 # Imagen final ligera
 FROM alpine:3.21
