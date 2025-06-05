@@ -15,7 +15,7 @@ FROM alpine:3.21
 
 WORKDIR /app
 
-RUN echo "$FIREBASE_CREDENTIALS_B64" | base64 -d > /app/firebase.json
+RUN echo "$FIREBASE_CREDENTIALS" | base64 -d > /app/firebase.json
 
 COPY --from=builder /app/main .
 
