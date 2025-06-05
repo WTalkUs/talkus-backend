@@ -14,7 +14,7 @@ func NewPostUsecase(repo *repositories.PostRepository) *PostUsecase {
     return &PostUsecase{repo: repo}
 }
 
-func (u *PostUsecase) GetPostByID(ctx context.Context, id string) (*models.Post, error) {
+func (u *PostUsecase) GetPostByID(ctx context.Context, id string) (*models.PostWithAuthor, error) {
     post, err := u.repo.GetPostByID(ctx, id)
     if err != nil {
         return nil, err

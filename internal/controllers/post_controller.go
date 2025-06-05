@@ -196,15 +196,15 @@ func (c *PostController) Edit(w http.ResponseWriter, r *http.Request) {
     if errFile == nil {
         defer file.Close()
 
-        // Destruir imagen antigua
-        if oldPost.ImageID != "" {
-            if _, err := c.cld.Upload.Destroy(ctx, uploader.DestroyParams{
-				PublicID: oldPost.ImageID,
+		// Destruir imagen antigua
+		if oldPost.Post.ImageID != "" {
+			if _, err := c.cld.Upload.Destroy(ctx, uploader.DestroyParams{
+				PublicID: oldPost.Post.ImageID,
 				Invalidate: func(b bool) *bool { return &b }(true),
-            }); err != nil {
-                log.Printf("no se pudo borrar imagen antigua: %v", err)
-            }
-        }
+			}); err != nil {
+				log.Printf("no se pudo borrar imagen antigua: %v", err)
+			}
+		}
 
         // Subir nueva imagen
         uploadParams := uploader.UploadParams{
@@ -218,11 +218,11 @@ func (c *PostController) Edit(w http.ResponseWriter, r *http.Request) {
             return
         }
 
-        update.ImageURL = res.SecureURL
-        update.ImageID  = res.PublicID
-    }else{
-		update.ImageURL = oldPost.ImageURL
-		update.ImageID  = oldPost.ImageID
+		update.ImageURL = res.SecureURL
+		update.ImageID  = res.PublicID
+	}else{
+		update.ImageURL = oldPost.Post.ImageURL
+		update.ImageID  = oldPost.Post.ImageID
 	}
 	
 
