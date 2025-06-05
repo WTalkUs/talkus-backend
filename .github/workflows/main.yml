@@ -23,7 +23,7 @@ jobs:
         run: |
           set -x
           docker build \
-            --build-arg FIREBASE_CREDENTIALS=${{ secrets.FIREBASE_CREDENTIALS }} \
+            --build-arg FIREBASE_CREDENTIALS="${{ secrets.FIREBASE_CREDENTIALS }}" \
             --build-arg FIREBASE_WEB_API_KEY=${{ secrets.FIREBASE_WEB_API_KEY }} \
             --build-arg CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }} \
             --build-arg CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }} \
