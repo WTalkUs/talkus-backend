@@ -7,8 +7,6 @@ RUN go mod download
 
 COPY . .
 
-ARG FIREBASE_CREDENTIALS
-
 # Compila la aplicación
 RUN CGO_ENABLED=0 GOOS=linux go build -o /app/main .
 

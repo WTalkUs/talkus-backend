@@ -56,6 +56,6 @@ jobs:
           port: 22
           script: |
             cd documents/dockers-projects/talkus/
-            sed -i '/^DOCKER_IMAGE_BACKEND_DEV=/d' .env.backend
-            echo "DOCKER_IMAGE_BACKEND_DEV=${{ secrets.DOCKER_USERNAME }}/talkus-backend-${{ github.event.number }}:${{ github.sha }}" >> .env.backend
+            sed -i '/^DOCKER_IMAGE_BACKEND_DEV=/d' .env
+            echo "DOCKER_IMAGE_BACKEND_DEV=${{ secrets.DOCKER_USERNAME }}/talkus-backend-${{ github.event.number }}:${{ github.sha }}" >> .env
             docker compose up -d backend-dev
