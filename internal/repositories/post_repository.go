@@ -19,38 +19,37 @@ func NewPostRepository(db *firestore.Client) *PostRepository {
 }
 
 func (r *PostRepository) GetPostByID(ctx context.Context, id string) (*models.PostWithAuthor, error) {
-    doc, err := r.db.Collection("posts").Doc(id).Get(ctx)
-    if err != nil {
-        return nil, fmt.Errorf("error al obtener el post por ID %s: %w", id, err)
-    }
+	doc, err := r.db.Collection("posts").Doc(id).Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error al obtener el post por ID %s: %w", id, err)
+	}
 
-    var p models.Post
-    if err := doc.DataTo(&p); err != nil {
-        return nil, fmt.Errorf("error al decodificar el post: %w", err)
-    }
-    p.ID = doc.Ref.ID 
+	var p models.Post
+	if err := doc.DataTo(&p); err != nil {
+		return nil, fmt.Errorf("error al decodificar el post: %w", err)
+	}
+	p.ID = doc.Ref.ID
 
-    post := &models.PostWithAuthor{
-        Post: p,
-    }
+	post := &models.PostWithAuthor{
+		Post: p,
+	}
 
-    if p.AuthorID != "" {
-        userDoc, err := r.db.Collection("users").Doc(p.AuthorID).Get(ctx)
-        if err != nil {
-            return nil, fmt.Errorf("error al obtener el autor con ID %s: %w", p.AuthorID, err)
-        }
+	if p.AuthorID != "" {
+		userDoc, err := r.db.Collection("users").Doc(p.AuthorID).Get(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("error al obtener el autor con ID %s: %w", p.AuthorID, err)
+		}
 
-        var u models.User
-        if err := userDoc.DataTo(&u); err != nil {
-            return nil, fmt.Errorf("error al decodificar datos del usuario %s: %w", p.AuthorID, err)
-        }
-        u.UID = userDoc.Ref.ID 
+		var u models.User
+		if err := userDoc.DataTo(&u); err != nil {
+			return nil, fmt.Errorf("error al decodificar datos del usuario %s: %w", p.AuthorID, err)
+		}
+		u.UID = userDoc.Ref.ID
 
-    
-        post.Author = &u
-    }
+		post.Author = &u
+	}
 
-    return post, nil
+	return post, nil
 }
 
 func (r *PostRepository) GetAll(ctx context.Context) ([]*models.Post, error) {
