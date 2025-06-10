@@ -158,3 +158,34 @@ func (r *PostRepository) Edit(ctx context.Context, id string, p *models.Post) er
 	}
 	return nil
 }
+
+func (r *PostRepository) AddReaction(ctx context.Context, id, reactionType string) error {
+    field := "likes"
+    if reactionType == "dislike" {
+        field = "dislikes"
+    }
+    _, err := r.db.Collection("posts").Doc(id).Update(ctx, []firestore.Update{
+        {Path: field, Value: firestore.Increment(1)},
+    })
+    return err
+}
+
+func (r *PostRepository) AddVote(ctx context.Context, v *models.Vote) error {
+    now := time.Now()
+    v.CreatedAt = now
+    v.UpdatedAt = now
+
+    doc, _, err := r.db.Collection("votes").Add(ctx, map[string]interface{}{
+        "user_id":    v.UserID,
+        "post_id":    v.PostID,
+        "comment_id": v.CommentID,
+        "type":       v.Type,
+        "created_at": v.CreatedAt,
+        "updated_at": v.UpdatedAt,
+    })
+    if err != nil {
+        return fmt.Errorf("error añadiendo vote: %w", err)
+    }
+    v.VoteID = doc.ID
+    return nil
+}

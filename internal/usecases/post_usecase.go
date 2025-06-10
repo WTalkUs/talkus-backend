@@ -1,7 +1,9 @@
 package usecases
 
-import(
+import (
 	"context"
+	"time"
+
 	"github.com/JuanPidarraga/talkus-backend/internal/models"
 	"github.com/JuanPidarraga/talkus-backend/internal/repositories"
 )
@@ -39,4 +41,27 @@ func (u *PostUsecase) DeletePost(ctx context.Context, id string) error {
 
 func (u *PostUsecase) EditPost(ctx context.Context, id string, p *models.Post) error {
     return u.repo.Edit(ctx, id, p)
+}
+
+func (u *PostUsecase) ReactPost(
+    ctx context.Context,
+    userID string,
+    postID string,
+    reactionType string,
+) (*models.Vote, error) {
+    if err := u.repo.AddReaction(ctx, postID, reactionType); err != nil {
+        return nil, err
+    }
+    vote := &models.Vote{
+        UserID:    userID,
+        PostID:    postID,
+        CommentID: "", 
+        Type:      models.VoteType(reactionType),
+        CreatedAt: time.Now(),
+        UpdatedAt: time.Now(),
+    }
+    if err := u.repo.AddVote(ctx, vote); err != nil {
+        return nil, err
+    }
+    return vote, nil
 }

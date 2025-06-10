@@ -68,6 +68,7 @@ func main() {
 	protectedRouter.HandleFunc("/profile", authHandler.GetUserProfile)
 	protectedRouter.HandleFunc("/posts", postController.Delete).Methods("DELETE")
 	protectedRouter.HandleFunc("/posts", postController.Edit).Methods("PUT")
+	protectedRouter.HandleFunc("/posts/{id}/react", postController.React).Methods("POST")
 
 	corsOptions := cors.Options{
 		AllowedOrigins:   []string{"*"},
