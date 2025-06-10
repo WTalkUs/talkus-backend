@@ -38,11 +38,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error iniciando Cloudinary: %v", err)
 	}
-
+	// Servicios de autenticación
 	authService := service.NewAuthService(firebaseApp)
 	authHandler := handlers.NewAuthHandler(authService)
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 
+	// Repositorios de Usuarios
 	userRepo := repositories.NewUserRepository(firebaseApp.Firestore)
 	userUsecase := usecases.NewUserUsecase(userRepo)
 	userController := controllers.NewUserController(userUsecase)
@@ -51,6 +52,16 @@ func main() {
 	postRepo := repositories.NewPostRepository(firebaseApp.Firestore)
 	postUsecase := usecases.NewPostUsecase(postRepo)
 	postController := controllers.NewPostController(postUsecase, cld)
+
+	// Repositorios de Comentarios
+	commentRepo := repositories.NewCommentRepository(firebaseApp.Firestore)
+	commentUsecase := usecases.NewCommentUsecase(commentRepo)
+	commentController := controllers.NewCommentController(commentUsecase)
+
+	// Crear un nuevo controlador de votos
+	voteRepo := repositories.NewVoteRepository(firebaseApp.Firestore)
+	voteUsecase := usecases.NewVoteUsecase(voteRepo)
+	voteController := controllers.NewVoteController(voteUsecase)
 
 	// Usar Gorilla Mux para definir rutas
 	router := mux.NewRouter()
@@ -65,10 +76,24 @@ func main() {
 
 	protectedRouter := router.PathPrefix("/api").Subrouter()
 	protectedRouter.Use(authMiddleware.Authenticate)
+
 	protectedRouter.HandleFunc("/profile", authHandler.GetUserProfile)
 	protectedRouter.HandleFunc("/posts", postController.Delete).Methods("DELETE")
 	protectedRouter.HandleFunc("/posts", postController.Edit).Methods("PUT")
 	protectedRouter.HandleFunc("/posts/{id}/react", postController.React).Methods("POST")
+
+	// Rutas para Comentarios
+	protectedRouter.HandleFunc("/comments", commentController.CreateComment).Methods("POST")
+	protectedRouter.HandleFunc("/comments/{commentId}", commentController.GetCommentByID).Methods("GET")
+	protectedRouter.HandleFunc("/comments/post/{postId}", commentController.GetCommentsByPostID).Methods("GET")
+	protectedRouter.HandleFunc("/comments/{commentId}", commentController.DeleteComment).Methods("DELETE")
+
+	// Rutas para Votos
+	protectedRouter.HandleFunc("/votes", voteController.CreateVote).Methods("POST")
+	protectedRouter.HandleFunc("/votes/{voteId}", voteController.GetVoteByID).Methods("GET")
+	protectedRouter.HandleFunc("/votes/post/{postId}", voteController.GetVotesByPostID).Methods("GET")
+	protectedRouter.HandleFunc("/votes/comment/{commentId}", voteController.GetVotesByCommentID).Methods("GET")
+	protectedRouter.HandleFunc("/votes/{voteId}", voteController.DeleteVote).Methods("DELETE")
 
 	corsOptions := cors.Options{
 		AllowedOrigins:   []string{"*"},
