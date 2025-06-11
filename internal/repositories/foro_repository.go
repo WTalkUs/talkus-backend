@@ -38,6 +38,7 @@ func (r *SubforoRepository) GetSubforoByID(ctx context.Context, id string) (*mod
 func (r *SubforoRepository) GetAll(ctx context.Context) ([]*models.Subforo, error) {
 	iter := r.db.
 		Collection("subforos").
+		Where("is_active", "==", true).
 		OrderBy("created_at", firestore.Desc).
 		Documents(ctx)
 	defer iter.Stop()
@@ -84,17 +85,19 @@ func (r *SubforoRepository) Create(ctx context.Context, subforo *models.Subforo)
 	return nil
 }
 
-// Delete elimina un subforo por ID
-func (r *SubforoRepository) Delete(ctx context.Context, id string) error {
-	_, err := r.db.Collection("subforos").Doc(id).Delete(ctx)
+func (r *SubforoRepository) Deactivate(ctx context.Context, id string) error {
+
+	_, err := r.db.Collection("subforos").Doc(id).Set(ctx, map[string]interface{}{
+		"is_active": false,
+	}, firestore.MergeAll)
 	if err != nil {
-		return fmt.Errorf("error al eliminar el subforo: %w", err)
+		return fmt.Errorf("error al desactivar el subforo: %w", err)
 	}
 	return nil
 }
 
 // edita un subforo existente
-func (r *SubforoRepository) Edit(ctx context.Context, id string, subforo *models.Subforo) error {
+func (r *SubforoRepository) EditSubforo(ctx context.Context, id string, subforo *models.Subforo) (*models.Subforo, error) {
 	_, err := r.db.Collection("subforos").Doc(id).Set(ctx, map[string]interface{}{
 		"title":       subforo.Title,
 		"description": subforo.Description,
@@ -102,8 +105,15 @@ func (r *SubforoRepository) Edit(ctx context.Context, id string, subforo *models
 		"moderators":  subforo.Moderators,
 		"is_active":   subforo.IsActive,
 	}, firestore.MergeAll)
+
 	if err != nil {
-		return fmt.Errorf("error al editar el subforo: %w", err)
+		return nil, fmt.Errorf("error al editar el subforo: %w", err)
 	}
-	return nil
+
+	updatedSubforo, err := r.GetSubforoByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("error al obtener el subforo actualizado: %w", err)
+	}
+
+	return updatedSubforo, nil
 }

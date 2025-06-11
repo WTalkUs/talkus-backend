@@ -89,6 +89,8 @@ func main() {
 	protectedRouter.HandleFunc("/subforos", subforoController.GetAll).Methods("GET")
 	protectedRouter.HandleFunc("/subforos", subforoController.Create).Methods("POST")
 	protectedRouter.HandleFunc("/subforos/{id}", subforoController.Delete).Methods("DELETE")
+	protectedRouter.HandleFunc("/subforos/{id}", subforoController.GetByID).Methods("GET")
+	protectedRouter.HandleFunc("/subforos/{id}", subforoController.Edit).Methods("PUT")
 
 	// Rutas para Comentarios
 	protectedRouter.HandleFunc("/comments", commentController.CreateComment).Methods("POST")
