@@ -24,7 +24,7 @@ func (u *SubforoUsecase) GetAllSubforos(ctx context.Context) ([]*models.Subforo,
 }
 
 func (u *SubforoUsecase) CreateSubforo(ctx context.Context, subforo *models.Subforo) (*models.Subforo, error) {
-	if subforo.Title == "" || subforo.Description == "" || subforo.Category == "" {
+	if subforo.Title == "" || subforo.Description == "" || len(subforo.Categories) == 0 {
 		return nil, fmt.Errorf("faltan campos obligatorios para crear el subforo")
 	}
 
