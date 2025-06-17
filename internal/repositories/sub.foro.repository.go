@@ -73,7 +73,7 @@ func (r *SubforoRepository) Create(ctx context.Context, subforo *models.Subforo)
 		"title":       subforo.Title,
 		"description": subforo.Description,
 		"created_by":  subforo.CreatedBy,
-		"category":    subforo.Category,
+		"categories":  subforo.Categories,
 		"moderators":  subforo.Moderators,
 		"is_active":   subforo.IsActive,
 		"created_at":  subforo.CreatedAt,
@@ -88,12 +88,13 @@ func (r *SubforoRepository) Create(ctx context.Context, subforo *models.Subforo)
 func (r *SubforoRepository) Deactivate(ctx context.Context, id string) error {
 
 	_, err := r.db.Collection("subforos").Doc(id).Set(ctx, map[string]interface{}{
-		"is_active": false,
+		"is_active":  false,
+		"updated_at": time.Now(),
 	}, firestore.MergeAll)
 	if err != nil {
 		return fmt.Errorf("error al desactivar el subforo: %w", err)
 	}
-	return nil
+	return err
 }
 
 // edita un subforo existente
@@ -101,9 +102,10 @@ func (r *SubforoRepository) EditSubforo(ctx context.Context, id string, subforo 
 	_, err := r.db.Collection("subforos").Doc(id).Set(ctx, map[string]interface{}{
 		"title":       subforo.Title,
 		"description": subforo.Description,
-		"category":    subforo.Category,
+		"category":    subforo.Categories,
 		"moderators":  subforo.Moderators,
 		"is_active":   subforo.IsActive,
+		"updated_at":  time.Now(),
 	}, firestore.MergeAll)
 
 	if err != nil {

@@ -78,7 +78,8 @@ func main() {
 	publicRouter.HandleFunc("/posts", postController.Create).Methods("POST")
 	publicRouter.HandleFunc("/post/{id}", postController.GetByID).Methods("GET")
 	publicRouter.HandleFunc("/votes/user", voteController.GetUserVote).Methods("GET")
-
+	publicRouter.HandleFunc("/subforos", subforoController.GetAll).Methods("GET")
+	publicRouter.HandleFunc("/comments/post/{postId}", commentController.GetCommentsByPostID).Methods("GET")
 	protectedRouter := router.PathPrefix("/api").Subrouter()
 	protectedRouter.Use(authMiddleware.Authenticate)
 
@@ -88,7 +89,7 @@ func main() {
 	protectedRouter.HandleFunc("/posts/{id}/react", voteController.React).Methods("POST")
 
 	// rutas para subforos
-	protectedRouter.HandleFunc("/subforos", subforoController.GetAll).Methods("GET")
+
 	protectedRouter.HandleFunc("/subforos", subforoController.Create).Methods("POST")
 	protectedRouter.HandleFunc("/subforos/{id}", subforoController.Delete).Methods("DELETE")
 	protectedRouter.HandleFunc("/subforos/{id}", subforoController.GetByID).Methods("GET")
@@ -97,7 +98,6 @@ func main() {
 	// Rutas para Comentarios
 	protectedRouter.HandleFunc("/comments", commentController.CreateComment).Methods("POST")
 	protectedRouter.HandleFunc("/comments/{commentId}", commentController.GetCommentByID).Methods("GET")
-	protectedRouter.HandleFunc("/comments/post/{postId}", commentController.GetCommentsByPostID).Methods("GET")
 	protectedRouter.HandleFunc("/comments/{commentId}", commentController.DeleteComment).Methods("DELETE")
 
 	// Rutas para Votos
