@@ -273,30 +273,3 @@ func (c *PostController) GetByID(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(post)
 }
-
-func (c *PostController) React(w http.ResponseWriter, r *http.Request) {
-    vars := mux.Vars(r)
-    id := vars["id"]
-
-    var payload struct { Type string `json:"type"` ; UserID string `json:"userId"` }
-    if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-        http.Error(w, "Payload inválido", http.StatusBadRequest)
-        return
-    }
-    if payload.Type != "like" && payload.Type != "dislike" {
-        http.Error(w, "Tipo de reacción inválido", http.StatusBadRequest)
-        return
-    }
-
-	userID := payload.UserID
-	if userID == "" {
-		http.Error(w, "user_id es obligatorio", http.StatusBadRequest)
-		return
-	}
-	_, err := c.postUsecase.ReactPost(r.Context(), id, payload.Type, userID)
-	if err != nil {
-		http.Error(w, "No se pudo registrar la reacción", http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
-}

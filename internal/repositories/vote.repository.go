@@ -16,6 +16,9 @@ type VoteRepository interface {
 	GetVotesByPostID(ctx context.Context, postID string) ([]models.Vote, error)
 	GetVotesByCommentID(ctx context.Context, commentID string) ([]models.Vote, error)
 	DeleteVote(ctx context.Context, voteID string) error
+	AddReaction(ctx context.Context, id, reactionType string) error
+	AddVote(ctx context.Context, v *models.Vote) error
+	GetUserVote(ctx context.Context, userID, postID string) (*models.Vote, error)
 }
 
 type voteRepository struct {
@@ -111,4 +114,60 @@ func (r *voteRepository) GetVotesByCommentID(ctx context.Context, commentID stri
 func (r *voteRepository) DeleteVote(ctx context.Context, voteID string) error {
 	_, err := r.db.Collection("votes").Doc(voteID).Delete(ctx)
 	return err
+}
+
+func (r *voteRepository) AddReaction(ctx context.Context, id, reactionType string) error {
+    field := "likes"
+    if reactionType == "dislike" {
+        field = "dislikes"
+    }
+    _, err := r.db.Collection("posts").Doc(id).Update(ctx, []firestore.Update{
+        {Path: field, Value: firestore.Increment(1)},
+    })
+    return err
+}
+
+func (r *voteRepository) AddVote(ctx context.Context, v *models.Vote) error {
+    now := time.Now()
+    v.CreatedAt = now
+    v.UpdatedAt = now
+
+    doc, _, err := r.db.Collection("votes").Add(ctx, map[string]interface{}{
+        "user_id":    v.UserID,
+        "post_id":    v.PostID,
+        "comment_id": v.CommentID,
+        "type":       v.Type,
+        "created_at": v.CreatedAt,
+        "updated_at": v.UpdatedAt,
+    })
+    if err != nil {
+        return fmt.Errorf("error añadiendo vote: %w", err)
+    }
+    v.VoteID = doc.ID
+    return nil
+}
+
+func (r *voteRepository) GetUserVote(ctx context.Context, userID, postID string) (*models.Vote, error) {
+    iter := r.db.Collection("votes").
+        Where("user_id", "==", userID).
+        Where("post_id", "==", postID).
+        Limit(1).
+        Documents(ctx)
+    defer iter.Stop()
+
+    doc, err := iter.Next()
+    if err == iterator.Done {
+        // No existe voto previo
+        return nil, nil
+    }
+    if err != nil {
+        return nil, fmt.Errorf("error buscando voto previo: %w", err)
+    }
+
+    var v models.Vote
+    if err := doc.DataTo(&v); err != nil {
+        return nil, fmt.Errorf("error decodificando voto previo: %w", err)
+    }
+    v.VoteID = doc.Ref.ID
+    return &v, nil
 }
