@@ -116,10 +116,10 @@ func (r *PostRepository) GetAll(ctx context.Context) ([]*models.Post, error) {
 func (r *PostRepository) Create(ctx context.Context, p *models.Post) error {
 	p.CreatedAt = time.Now()
 	doc, _, err := r.db.Collection("posts").Add(ctx, map[string]interface{}{
-		"title":     p.Title,
-		"content":   p.Content,
-		"author_id": p.AuthorID,
-		"tags":      p.Tags,
+		"title":      p.Title,
+		"content":    p.Content,
+		"author_id":  p.AuthorID,
+		"tags":       p.Tags,
 		"is_flagged": p.IsFlagged,
 		//"forum_id":  p.ForumID,
 		"likes":      p.Likes,
@@ -148,7 +148,7 @@ func (r *PostRepository) Edit(ctx context.Context, id string, p *models.Post) er
 		"title":   p.Title,
 		"content": p.Content,
 		//"author_id":  p.AuthorID,
-		"tags":      p.Tags,
+		"tags": p.Tags,
 		//"forum_id":  p.ForumID,
 		"image_id":  p.ImageID,
 		"image_url": p.ImageURL,
@@ -157,4 +157,20 @@ func (r *PostRepository) Edit(ctx context.Context, id string, p *models.Post) er
 		return fmt.Errorf("error al editar el post: %w", err)
 	}
 	return nil
+}
+
+func (r *PostRepository) IncrementReaction(
+	ctx context.Context,
+	postID string,
+	reactionType string,
+	delta int,
+) error {
+	field := "likes"
+	if reactionType == "dislike" {
+		field = "dislikes"
+	}
+	_, err := r.db.Collection("posts").Doc(postID).Update(ctx, []firestore.Update{
+		{Path: field, Value: firestore.Increment(delta)},
+	})
+	return err
 }

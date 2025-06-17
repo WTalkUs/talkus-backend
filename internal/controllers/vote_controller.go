@@ -135,3 +135,71 @@ func (v *VoteController) DeleteVote(w http.ResponseWriter, r *http.Request) {
 		"vote":    vote, // Devolver el voto eliminado
 	})
 }
+
+func (c *VoteController) React(w http.ResponseWriter, r *http.Request) {
+    postID := mux.Vars(r)["id"]
+
+    // Decodificamos sólo el campo "type" y "userId"
+    var payload struct {
+        Type   string `json:"type"`   // like|dislike|none
+        UserID string `json:"userId"`
+    }
+    if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+        http.Error(w, "Payload inválido", http.StatusBadRequest)
+        return
+    }
+
+    // Validamos type
+    switch payload.Type {
+    case "like", "dislike", "none":
+        // ok
+    default:
+        http.Error(w, "Tipo de reacción inválido", http.StatusBadRequest)
+        return
+    }
+
+    if payload.UserID == "" {
+        http.Error(w, "userId es obligatorio", http.StatusBadRequest)
+        return
+    }
+
+    // Llamamos al usecase, devolviendo *models.Vote o nil (si type=="none")
+	vote, err := c.usecase.ReactPost(r.Context(), payload.UserID, postID, payload.Type)
+    if err != nil {
+        http.Error(w, "No se pudo registrar la reacción", http.StatusInternalServerError)
+        return
+    }
+
+    // Si fue anular voto, devolvemos 204 No Content
+    if payload.Type == "none" {
+        w.WriteHeader(http.StatusNoContent)
+        return
+    }
+
+    // Caso like/dislike: devolvemos 201 con el objeto vote
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusCreated)
+    json.NewEncoder(w).Encode(vote)
+}
+
+func (vc *VoteController) GetUserVote(w http.ResponseWriter, r *http.Request) {
+    userID := r.URL.Query().Get("user_id")
+    postID := r.URL.Query().Get("post_id")
+    if userID == "" || postID == "" {
+        http.Error(w, "user_id y post_id son requeridos", http.StatusBadRequest)
+        return
+    }
+
+    vote, err := vc.usecase.GetUserVote(r.Context(), userID, postID)
+    if err != nil {
+        http.Error(w, "Error buscando voto: "+err.Error(), http.StatusInternalServerError)
+        return
+    }
+    if vote == nil {
+        w.WriteHeader(http.StatusNoContent)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(vote)
+}

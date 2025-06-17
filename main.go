@@ -60,7 +60,7 @@ func main() {
 
 	// Crear un nuevo controlador de votos
 	voteRepo := repositories.NewVoteRepository(firebaseApp.Firestore)
-	voteUsecase := usecases.NewVoteUsecase(voteRepo)
+	voteUsecase := usecases.NewVoteUsecase(voteRepo, postRepo)
 	voteController := controllers.NewVoteController(voteUsecase)
 
 	subforoRepo := repositories.NewSubforoRepository(firebaseApp.Firestore)
@@ -77,6 +77,7 @@ func main() {
 	publicRouter.HandleFunc("/posts", postController.GetAll).Methods("GET")
 	publicRouter.HandleFunc("/posts", postController.Create).Methods("POST")
 	publicRouter.HandleFunc("/post/{id}", postController.GetByID).Methods("GET")
+	publicRouter.HandleFunc("/votes/user", voteController.GetUserVote).Methods("GET")
 
 	protectedRouter := router.PathPrefix("/api").Subrouter()
 	protectedRouter.Use(authMiddleware.Authenticate)
@@ -84,6 +85,7 @@ func main() {
 	protectedRouter.HandleFunc("/profile", authHandler.GetUserProfile)
 	protectedRouter.HandleFunc("/posts", postController.Delete).Methods("DELETE")
 	protectedRouter.HandleFunc("/posts", postController.Edit).Methods("PUT")
+	protectedRouter.HandleFunc("/posts/{id}/react", voteController.React).Methods("POST")
 
 	// rutas para subforos
 	protectedRouter.HandleFunc("/subforos", subforoController.GetAll).Methods("GET")

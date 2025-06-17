@@ -192,6 +192,7 @@ func (c *PostController) Edit(w http.ResponseWriter, r *http.Request) {
 
 	title := r.FormValue("title")
 	content := r.FormValue("content")
+	tags := r.FormValue("tags")
 
 	update := &models.Post{}
 	if title != "" {
@@ -199,6 +200,14 @@ func (c *PostController) Edit(w http.ResponseWriter, r *http.Request) {
 	}
 	if content != "" {
 		update.Content = content
+	}
+	if tags != "" {
+		var parsedTags []string
+		if err := json.Unmarshal([]byte(tags), &parsedTags); err != nil {
+			http.Error(w, "tags inválidos", http.StatusBadRequest)
+			return
+		}
+		update.Tags = parsedTags
 	}
 
 	// Procesar nueva imagen si viene

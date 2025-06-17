@@ -2,14 +2,19 @@ package models
 
 import "time"
 
-// Comment representa la estructura de un comentario en el sistema.
+type VoteType string
+
+const (
+    Like    VoteType = "like"
+    Dislike VoteType = "dislike"
+)
 
 type Vote struct {
-	VoteID    string    `json:"voteId"`
-	PostID    string    `json:"postId,omitempty"`
-	CommentID string    `json:"commentId,omitempty"`
-	UserID    string    `json:"userId"`
-	Type      string    `json:"type"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+    VoteID    string    `firestore:"-" json:"vote_id"`
+    UserID    string    `firestore:"user_id" json:"user_id"`
+    PostID    string    `firestore:"post_id" json:"post_id"`
+    CommentID string    `firestore:"comment_id,omitempty" json:"comment_id,omitempty"`
+    Type      VoteType  `firestore:"type" json:"type"`
+    CreatedAt time.Time `firestore:"created_at" json:"created_at"`
+    UpdatedAt time.Time `firestore:"updated_at" json:"updated_at"`
 }

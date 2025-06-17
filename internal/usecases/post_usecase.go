@@ -1,7 +1,8 @@
 package usecases
 
-import(
+import (
 	"context"
+
 	"github.com/JuanPidarraga/talkus-backend/internal/models"
 	"github.com/JuanPidarraga/talkus-backend/internal/repositories"
 )
@@ -40,3 +41,4 @@ func (u *PostUsecase) DeletePost(ctx context.Context, id string) error {
 func (u *PostUsecase) EditPost(ctx context.Context, id string, p *models.Post) error {
     return u.repo.Edit(ctx, id, p)
 }
+
