@@ -65,7 +65,7 @@ func main() {
 
 	subforoRepo := repositories.NewSubforoRepository(firebaseApp.Firestore)
 	subforoUsecase := usecases.NewSubforoUsecase(subforoRepo)
-	subforoController := controllers.NewSubforoController(subforoUsecase)
+	subforoController := controllers.NewSubforoController(subforoUsecase, cld)
 
 	// Usar Gorilla Mux para definir rutas
 	router := mux.NewRouter()
@@ -80,6 +80,8 @@ func main() {
 	publicRouter.HandleFunc("/votes/user", voteController.GetUserVote).Methods("GET")
 	publicRouter.HandleFunc("/subforos", subforoController.GetAll).Methods("GET")
 	publicRouter.HandleFunc("/comments/post/{postId}", commentController.GetCommentsByPostID).Methods("GET")
+	publicRouter.HandleFunc("/subforos/{id}", subforoController.GetByID).Methods("GET")
+
 	protectedRouter := router.PathPrefix("/api").Subrouter()
 	protectedRouter.Use(authMiddleware.Authenticate)
 
@@ -89,10 +91,9 @@ func main() {
 	protectedRouter.HandleFunc("/posts/{id}/react", voteController.React).Methods("POST")
 
 	// rutas para subforos
-
 	protectedRouter.HandleFunc("/subforos", subforoController.Create).Methods("POST")
 	protectedRouter.HandleFunc("/subforos/{id}", subforoController.Delete).Methods("DELETE")
-	protectedRouter.HandleFunc("/subforos/{id}", subforoController.GetByID).Methods("GET")
+
 	protectedRouter.HandleFunc("/subforos/{id}", subforoController.Edit).Methods("PUT")
 
 	// Rutas para Comentarios

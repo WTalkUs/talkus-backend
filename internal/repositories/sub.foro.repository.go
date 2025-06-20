@@ -74,9 +74,12 @@ func (r *SubforoRepository) Create(ctx context.Context, subforo *models.Subforo)
 		"description": subforo.Description,
 		"created_by":  subforo.CreatedBy,
 		"categories":  subforo.Categories,
+		"updated_at":  subforo.CreatedAt,
 		"moderators":  subforo.Moderators,
 		"is_active":   subforo.IsActive,
 		"created_at":  subforo.CreatedAt,
+		"banner_url":  subforo.BannerURL,
+		"icon_url":    subforo.IconURL,
 	})
 	if err != nil {
 		return err
@@ -102,7 +105,9 @@ func (r *SubforoRepository) EditSubforo(ctx context.Context, id string, subforo 
 	_, err := r.db.Collection("subforos").Doc(id).Set(ctx, map[string]interface{}{
 		"title":       subforo.Title,
 		"description": subforo.Description,
-		"category":    subforo.Categories,
+		"categories":  subforo.Categories,
+		"banner_url":  subforo.BannerURL,
+		"icon_url":    subforo.IconURL,
 		"moderators":  subforo.Moderators,
 		"is_active":   subforo.IsActive,
 		"updated_at":  time.Now(),
