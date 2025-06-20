@@ -169,6 +169,31 @@ func (s *AuthService) ChangeUserEmail(ctx context.Context, uid string, newEmail 
 		return fmt.Errorf("error actualizando email en Firestore: %v", err)
 	}
 
-	fmt.Printf("📧 Email actualizado para usuario %s: %s\n", uid, newEmail)
+	return nil
+}
+
+// ChangeUserPassword cambia la contraseña del usuario en Firebase Authentication
+func (s *AuthService) ChangeUserPassword(ctx context.Context, uid string, newPassword string) error {
+	if uid == "" {
+		return errors.New("UID del usuario es requerido")
+	}
+
+	if newPassword == "" {
+		return errors.New("nueva contraseña es requerida")
+	}
+
+	// Validar que la contraseña tenga al menos 6 caracteres (requerimiento de Firebase)
+	if len(newPassword) < 6 {
+		return errors.New("la contraseña debe tener al menos 6 caracteres")
+	}
+
+	// Cambiar la contraseña en Firebase Authentication
+	params := (&auth.UserToUpdate{}).Password(newPassword)
+
+	_, err := s.firebase.Auth.UpdateUser(ctx, uid, params)
+	if err != nil {
+		return fmt.Errorf("error actualizando contraseña en Firebase Auth: %v", err)
+	}
+
 	return nil
 }

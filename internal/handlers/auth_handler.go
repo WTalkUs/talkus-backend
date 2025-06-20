@@ -92,3 +92,62 @@ func (h *AuthHandler) ChangeEmail(w http.ResponseWriter, r *http.Request) {
 		"new_email": req.NewEmail,
 	})
 }
+
+// ChangePasswordRequest estructura para la petición de cambio de contraseña
+type ChangePasswordRequest struct {
+	NewPassword string `json:"new_password"`
+}
+
+// @Summary Cambiar contraseña
+// @Description Permite al usuario autenticado cambiar su contraseña en Firebase Authentication
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param new_password body ChangePasswordRequest true "Nueva contraseña"
+// @Success 200 {object} map[string]string "Contraseña actualizada correctamente"
+// @Failure 400 {object} map[string]string "Solicitud inválida: la nueva contraseña es requerida o muy corta"
+// @Failure 401 {object} map[string]string "Token no encontrado o inválido"
+// @Failure 500 {object} map[string]string "Error interno al cambiar la contraseña"
+// @Router /api/change-password [put]
+// ChangePassword maneja la petición para cambiar la contraseña del usuario
+func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	// Obtener el token del usuario autenticado
+	token, ok := r.Context().Value(middleware.AuthUserKey).(*auth.Token)
+	if !ok {
+		http.Error(w, "❌ Token no encontrado", http.StatusUnauthorized)
+		return
+	}
+
+	// Decodificar la petición
+	var req ChangePasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "❌ Formato de petición inválido", http.StatusBadRequest)
+		return
+	}
+
+	// Validar que la nueva contraseña no esté vacía
+	if req.NewPassword == "" {
+		http.Error(w, "❌ La nueva contraseña es requerida", http.StatusBadRequest)
+		return
+	}
+
+	// Validar longitud mínima de contraseña
+	if len(req.NewPassword) < 6 {
+		http.Error(w, "❌ La contraseña debe tener al menos 6 caracteres", http.StatusBadRequest)
+		return
+	}
+
+	// Cambiar la contraseña usando el servicio
+	err := h.authService.ChangeUserPassword(r.Context(), token.UID, req.NewPassword)
+	if err != nil {
+		http.Error(w, "❌ Error cambiando contraseña: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Responder con éxito
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Contraseña actualizada correctamente",
+	})
+}
