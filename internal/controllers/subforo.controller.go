@@ -118,13 +118,12 @@ func (c *SubforoController) GetByID(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {object} map[string]string "Error interno al crear el subforo"
 // @Router /api/subforos [post]
 func (c *SubforoController) Create(w http.ResponseWriter, r *http.Request) {
-	// 1. Validar Content-Type
+
 	if !strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
 		respondWithError(w, http.StatusBadRequest, "Content-Type debe ser multipart/form-data")
 		return
 	}
 
-	// 2. Parsear el formulario (límite 10MB)
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Error al procesar formulario: "+err.Error())
 		return
@@ -134,11 +133,10 @@ func (c *SubforoController) Create(w http.ResponseWriter, r *http.Request) {
 	var moderators []string
 	if moderatorsStr != "" {
 		moderators = strings.Split(moderatorsStr, ",")
-		// Filtrar strings vacíos
+
 		moderators = filterEmptyStrings(moderators)
 	}
 
-	// 3. Obtener datos básicos
 	subforo := models.Subforo{
 		Title:       r.FormValue("title"),
 		Description: r.FormValue("description"),
@@ -146,7 +144,6 @@ func (c *SubforoController) Create(w http.ResponseWriter, r *http.Request) {
 		Moderators:  moderators,
 	}
 
-	// 4. Validaciones
 	if subforo.Title == "" || subforo.Description == "" {
 		respondWithError(w, http.StatusBadRequest, "Title y description son obligatorios")
 		return
@@ -160,7 +157,6 @@ func (c *SubforoController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 5. Procesar imágenes
 	if bannerFile, _, err := r.FormFile("banner"); err == nil {
 		defer bannerFile.Close()
 		if bannerURL, err := c.uploadImageToCloudinary(bannerFile, "banner_"+time.Now().Format("20060102150405")); err == nil {
@@ -181,21 +177,18 @@ func (c *SubforoController) Create(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// 6. Autenticación y campos automáticos
 	token := r.Context().Value(middleware.AuthUserKey).(*auth.Token)
 	subforo.CreatedBy = token.UID
 	subforo.CreatedAt = time.Now()
 	subforo.UpdatedAt = time.Now()
 	subforo.IsActive = true
 
-	// 7. Asegurar que el creador sea moderador
 	if len(subforo.Moderators) == 0 {
 		subforo.Moderators = []string{token.UID}
 	} else if !contains(subforo.Moderators, token.UID) {
 		subforo.Moderators = append(subforo.Moderators, token.UID)
 	}
 
-	// 8. Crear en Firestore
 	createdSubforo, err := c.subforoUsecase.CreateSubforo(r.Context(), &subforo)
 	if err != nil {
 		log.Printf("Error creando subforo: %v", err)
@@ -250,30 +243,26 @@ func (c *SubforoController) uploadImageToCloudinary(file multipart.File, publicI
 // @Failure 500 {object} map[string]string "Error interno al eliminar el subforo"
 // @Router /api/subforos/{id} [delete]
 func (c *SubforoController) Delete(w http.ResponseWriter, r *http.Request) {
-
 	vars := mux.Vars(r)
 	id := vars["id"]
 	if id == "" {
-		http.Error(w, "ID de subforo es obligatorio", http.StatusBadRequest)
+		respondWithError(w, http.StatusBadRequest, "ID de subforo es obligatorio")
 		return
 	}
-
 	token := r.Context().Value(middleware.AuthUserKey).(*auth.Token)
 	if !c.checkPermissions(r.Context(), id, token.UID) {
 		respondWithError(w, http.StatusForbidden, "No tienes permisos para esta acción")
 		return
 	}
-
-	// Llamamos al usecase para actualizar el subforo y marcarlo como inactivo
 	ctx := context.Background()
-	if err := c.subforoUsecase.DeactivateSubforo(ctx, id); err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Error al eliminar subforo")
+
+	subforo, err := c.subforoUsecase.DeactivateSubforo(ctx, id)
+	if err != nil {
+		log.Printf("Error desactivando subforo: %v", err)
+		respondWithError(w, http.StatusInternalServerError, "Error al desactivar subforo")
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNoContent) // 200 OK
-
+	respondWithJSON(w, http.StatusOK, subforo)
 }
 
 func (c *SubforoController) Edit(w http.ResponseWriter, r *http.Request) {
@@ -283,7 +272,6 @@ func (c *SubforoController) Edit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 2. Parsear el formulario (límite 10MB)
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Error al procesar formulario: "+err.Error())
 		return
@@ -302,7 +290,6 @@ func (c *SubforoController) Edit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Obtener el subforo actual desde la base de datos
 	ctx := context.Background()
 	currentSubforo, err := c.subforoUsecase.GetSubforoByID(ctx, id)
 	if err != nil {
@@ -315,10 +302,8 @@ func (c *SubforoController) Edit(w http.ResponseWriter, r *http.Request) {
 		Description: r.FormValue("description"),
 		Categories:  filterEmptyStrings(strings.Split(r.FormValue("categories"), ",")),
 		Moderators:  filterEmptyStrings(strings.Split(r.FormValue("moderators"), ",")),
-		IsActive:    currentSubforo.IsActive, // Mantener el estado actual por defecto
+		IsActive:    currentSubforo.IsActive,
 	}
-
-	// Leer los datos del subforo enviados en la solicitud
 
 	if bannerFile, _, err := r.FormFile("banner"); err == nil {
 		defer bannerFile.Close()
@@ -329,7 +314,7 @@ func (c *SubforoController) Edit(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		subforo.BannerURL = currentSubforo.BannerURL // Mantener el existente
+		subforo.BannerURL = currentSubforo.BannerURL
 	}
 
 	if iconFile, _, err := r.FormFile("icon"); err == nil {
@@ -341,10 +326,9 @@ func (c *SubforoController) Edit(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		subforo.IconURL = currentSubforo.IconURL // Mantener el existente
+		subforo.IconURL = currentSubforo.IconURL
 	}
 
-	// Conservar los valores que no fueron enviados en la solicitud
 	if subforo.Title == "" {
 		subforo.Title = currentSubforo.Title
 	}
@@ -361,7 +345,6 @@ func (c *SubforoController) Edit(w http.ResponseWriter, r *http.Request) {
 		subforo.IsActive = currentSubforo.IsActive
 	}
 
-	// Llamar al usecase para actualizar el subforo con los nuevos valores
 	updatedSubforo, err := c.subforoUsecase.EditSubforo(ctx, id, &subforo)
 	if err != nil {
 		log.Printf("Error editando subforo: %v", err)
@@ -369,7 +352,6 @@ func (c *SubforoController) Edit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Responder con el subforo actualizado
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(updatedSubforo)
