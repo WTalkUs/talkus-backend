@@ -46,7 +46,7 @@ func main() {
 	// Repositorios de Usuarios
 	userRepo := repositories.NewUserRepository(firebaseApp.Firestore)
 	userUsecase := usecases.NewUserUsecase(userRepo)
-	userController := controllers.NewUserController(userUsecase)
+	userController := controllers.NewUserController(userUsecase, cld)
 
 	// Post layer
 	postRepo := repositories.NewPostRepository(firebaseApp.Firestore)
@@ -86,6 +86,9 @@ func main() {
 	protectedRouter.Use(authMiddleware.Authenticate)
 
 	protectedRouter.HandleFunc("/profile", authHandler.GetUserProfile)
+	protectedRouter.HandleFunc("/change-email", authHandler.ChangeEmail).Methods("PUT")
+	protectedRouter.HandleFunc("/change-password", authHandler.ChangePassword).Methods("PUT")
+	protectedRouter.HandleFunc("/edit-profile", userController.EditUserProfile).Methods("PUT")
 	protectedRouter.HandleFunc("/posts", postController.Delete).Methods("DELETE")
 	protectedRouter.HandleFunc("/posts", postController.Edit).Methods("PUT")
 	protectedRouter.HandleFunc("/posts/{id}/react", voteController.React).Methods("POST")
