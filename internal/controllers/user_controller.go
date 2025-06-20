@@ -67,7 +67,7 @@ func (c *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
 // @Param profile_photo body models.User true "Foto de perfil del usuario"
 // @Success 200 {object} models.User "Foto de perfil actualizada"
 // @Failure 400 {object} map[string]string "Parámetro 'id' faltante"
-func (c *UserController) EditUserProfielPhoto(w http.ResponseWriter, r *http.Request) {
+func (c *UserController) EditUserProfile(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
 	userID := r.URL.Query().Get("id")
@@ -86,6 +86,11 @@ func (c *UserController) EditUserProfielPhoto(w http.ResponseWriter, r *http.Req
 	oldProfilePhoto, ok := oldUserData["profile_photo"].(string)
 	if !ok {
 		oldProfilePhoto = ""
+	}
+
+	oldBannerImage, ok := oldUserData["banner_image"].(string)
+	if !ok {
+		oldBannerImage = ""
 	}
 
 	//comprobar Content-Type y parsear form
@@ -138,7 +143,38 @@ func (c *UserController) EditUserProfielPhoto(w http.ResponseWriter, r *http.Req
 		update.ProfilePhoto = oldProfilePhoto
 	}
 
-	if err := c.usecase.EditUserProfielPhoto(ctx, userID, *update); err != nil {
+	fileBanner, _, errFileBanner := r.FormFile("banner_image")
+	if errFileBanner == nil {
+		defer fileBanner.Close()
+
+		// Destruir imagen antigua
+		if oldBannerImage != "" {
+			if _, err := c.cld.Upload.Destroy(ctx, uploader.DestroyParams{
+				PublicID:   oldBannerImage,
+				Invalidate: func(b bool) *bool { return &b }(true),
+			}); err != nil {
+				log.Printf("no se pudo borrar imagen antigua: %v", err)
+			}
+		}
+
+		// Subir nueva imagen
+		uploadParams := uploader.UploadParams{
+			Folder:    "banner_photos",
+			PublicID:  fmt.Sprintf("banner_%s", userID),
+			Overwrite: func(b bool) *bool { return &b }(true),
+		}
+		res, errUp := c.cld.Upload.Upload(ctx, fileBanner, uploadParams)
+		if errUp != nil {
+			http.Error(w, "Error subiendo imagen: "+errUp.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		update.BannerImage = res.SecureURL
+	} else {
+		update.BannerImage = oldBannerImage
+	}
+
+	if err := c.usecase.EditUserProfile(ctx, userID, *update); err != nil {
 		log.Printf("Error editando foto de perfil: %v", err)
 		http.Error(w, "No se pudo editar la foto de perfil", http.StatusInternalServerError)
 		return

@@ -33,8 +33,8 @@ func (r *UserRepository) CreateUser(ctx context.Context, userID string, userData
 	return err
 }
 
-// EditUserProfielPhoto permite editar la foto de perfil de un usuario.
-func (r *UserRepository) EditUserProfielPhoto(ctx context.Context, userID string, userData models.User) error {
+// EditUserProfile permite editar la foto de perfil de un usuario.
+func (r *UserRepository) EditUserProfile(ctx context.Context, userID string, userData models.User) error {
 	_, err := r.db.Collection("users").Doc(userID).Update(ctx, []firestore.Update{
 		{
 			Path:  "profile_photo",
@@ -43,6 +43,10 @@ func (r *UserRepository) EditUserProfielPhoto(ctx context.Context, userID string
 		{
 			Path:  "username",
 			Value: userData.Username,
+		},
+		{
+			Path:  "banner_image",
+			Value: userData.BannerImage,
 		},
 	})
 	return err
