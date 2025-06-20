@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/JuanPidarraga/talkus-backend/internal/models"
 	"github.com/JuanPidarraga/talkus-backend/internal/repositories"
 )
 
@@ -26,4 +27,17 @@ func (u *UserUsecase) GetUser(ctx context.Context, userID string) (map[string]in
 		return nil, errors.New("usuario no encontrado")
 	}
 	return user, nil
+}
+
+// EditUserProfielPhoto ejecuta la lógica para editar la foto de perfil de un usuario.
+func (u *UserUsecase) EditUserProfielPhoto(ctx context.Context, userID string, user models.User) error {
+	if userID == "" {
+		return errors.New("falta el parámetro 'id'")
+	}
+
+	err := u.repo.EditUserProfielPhoto(ctx, userID, user)
+	if err != nil {
+		return errors.New("error editando foto de perfil")
+	}
+	return nil
 }

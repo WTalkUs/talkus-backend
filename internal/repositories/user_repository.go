@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/firestore"
+	"github.com/JuanPidarraga/talkus-backend/internal/models"
 )
 
 // UserRepository se encarga de interactuar con la colección "users" en Firestore.
@@ -26,8 +27,23 @@ func (r *UserRepository) GetUserByID(ctx context.Context, userID string) (map[st
 	return doc.Data(), nil
 }
 
-//CreateUser permite crear un usuario.
+// CreateUser permite crear un usuario.
 func (r *UserRepository) CreateUser(ctx context.Context, userID string, userData map[string]interface{}) error {
 	_, err := r.db.Collection("users").Doc(userID).Set(ctx, userData)
+	return err
+}
+
+// EditUserProfielPhoto permite editar la foto de perfil de un usuario.
+func (r *UserRepository) EditUserProfielPhoto(ctx context.Context, userID string, userData models.User) error {
+	_, err := r.db.Collection("users").Doc(userID).Update(ctx, []firestore.Update{
+		{
+			Path:  "profile_photo",
+			Value: userData.ProfilePhoto,
+		},
+		{
+			Path:  "username",
+			Value: userData.Username,
+		},
+	})
 	return err
 }
