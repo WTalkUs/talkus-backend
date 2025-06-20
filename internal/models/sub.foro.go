@@ -15,6 +15,8 @@ type Subforo struct {
 	Categories  []string  `firestore:"categories" json:"categories" validate:"required,min=1,max=3"`
 	Moderators  []string  `firestore:"moderators" json:"moderators" validate:"required,min=1"`
 	IsActive    bool      `firestore:"is_active" json:"isActive"`
+	BannerURL   string    `firestore:"banner_url" json:"bannerUrl"`
+	IconURL     string    `firestore:"icon_url" json:"iconUrl"`
 }
 
 func (s *Subforo) Validate() error {
