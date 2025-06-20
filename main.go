@@ -84,6 +84,7 @@ func main() {
 	protectedRouter.Use(authMiddleware.Authenticate)
 
 	protectedRouter.HandleFunc("/profile", authHandler.GetUserProfile)
+	protectedRouter.HandleFunc("/change-email", authHandler.ChangeEmail).Methods("PUT")
 	protectedRouter.HandleFunc("/profile-photo", userController.EditUserProfielPhoto).Methods("PUT")
 	protectedRouter.HandleFunc("/posts", postController.Delete).Methods("DELETE")
 	protectedRouter.HandleFunc("/posts", postController.Edit).Methods("PUT")

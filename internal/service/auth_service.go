@@ -10,6 +10,7 @@ import (
 	"os"
 	"time"
 
+	"cloud.google.com/go/firestore"
 	"firebase.google.com/go/v4/auth"
 	"github.com/JuanPidarraga/talkus-backend/config"
 	"github.com/JuanPidarraga/talkus-backend/internal/models"
@@ -132,5 +133,42 @@ func (s *AuthService) SendResetEmail(email string) error {
 		}
 	}
 
+	return nil
+}
+
+// ChangeUserEmail cambia el correo electrónico del usuario tanto en Firebase Auth como en Firestore
+func (s *AuthService) ChangeUserEmail(ctx context.Context, uid string, newEmail string) error {
+	if uid == "" {
+		return errors.New("UID del usuario es requerido")
+	}
+
+	if newEmail == "" {
+		return errors.New("nuevo email es requerido")
+	}
+
+	// 1. Cambiar el email en Firebase Authentication
+	params := (&auth.UserToUpdate{}).Email(newEmail)
+
+	_, err := s.firebase.Auth.UpdateUser(ctx, uid, params)
+	if err != nil {
+		return fmt.Errorf("error actualizando email en Firebase Auth: %v", err)
+	}
+
+	// 2. Actualizar el email en Firestore
+	_, err = s.firebase.Firestore.Collection("users").Doc(uid).Update(ctx, []firestore.Update{
+		{
+			Path:  "email",
+			Value: newEmail,
+		},
+		{
+			Path:  "updatedAt",
+			Value: time.Now(),
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("error actualizando email en Firestore: %v", err)
+	}
+
+	fmt.Printf("📧 Email actualizado para usuario %s: %s\n", uid, newEmail)
 	return nil
 }
