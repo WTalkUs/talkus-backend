@@ -137,10 +137,19 @@ func (c *SubforoController) Create(w http.ResponseWriter, r *http.Request) {
 		moderators = filterEmptyStrings(moderators)
 	}
 
+	tags := []string{}
+	rawTags := r.FormValue("categories")
+	if rawTags != "" {
+		if err := json.Unmarshal([]byte(rawTags), &tags); err != nil {
+			http.Error(w, "tags inválidos", http.StatusBadRequest)
+			return
+		}
+	}
+
 	subforo := models.Subforo{
 		Title:       r.FormValue("title"),
 		Description: r.FormValue("description"),
-		Categories:  strings.Split(r.FormValue("categories"), ","),
+		Categories:  tags, 
 		Moderators:  moderators,
 	}
 
@@ -157,7 +166,7 @@ func (c *SubforoController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if bannerFile, _, err := r.FormFile("banner"); err == nil {
+	if bannerFile, _, err := r.FormFile("banner_url"); err == nil {
 		defer bannerFile.Close()
 		if bannerURL, err := c.uploadImageToCloudinary(bannerFile, "banner_"+time.Now().Format("20060102150405")); err == nil {
 			subforo.BannerURL = bannerURL
@@ -167,7 +176,7 @@ func (c *SubforoController) Create(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if iconFile, _, err := r.FormFile("icon"); err == nil {
+	if iconFile, _, err := r.FormFile("icon_url"); err == nil {
 		defer iconFile.Close()
 		if iconURL, err := c.uploadImageToCloudinary(iconFile, "icon_"+time.Now().Format("20060102150405")); err == nil {
 			subforo.IconURL = iconURL
