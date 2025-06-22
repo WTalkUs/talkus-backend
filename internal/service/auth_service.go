@@ -6,25 +6,33 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"image/png"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/firestore"
 	"firebase.google.com/go/v4/auth"
 	"github.com/JuanPidarraga/talkus-backend/config"
 	"github.com/JuanPidarraga/talkus-backend/internal/models"
+	"github.com/cloudinary/cloudinary-go/v2"
+	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
+	"github.com/o1egl/govatar"
 )
 
 type AuthService struct {
 	firebase *config.FirebaseApp
+	cld      *cloudinary.Cloudinary
 }
 
-func NewAuthService(firebase *config.FirebaseApp) *AuthService {
+func NewAuthService(firebase *config.FirebaseApp, cld *cloudinary.Cloudinary) *AuthService {
 	return &AuthService{
 		firebase: firebase,
+		cld:      cld,
 	}
 }
+
 func (s *AuthService) VerifyIDToken(ctx context.Context, idToken string) (*auth.Token, error) {
 	if idToken == "" {
 		return nil, errors.New("idToken is empty")
@@ -72,17 +80,84 @@ func (s *AuthService) RegisterUser(ctx context.Context, username, email, passwor
 	return userRecord, nil
 }
 
+// GenerateAndUploadAvatar genera un avatar con las iniciales del usuario y lo sube a Cloudinary
+func (s *AuthService) GenerateAndUploadAvatar(ctx context.Context, displayName, userID string) (string, error) {
+	if displayName == "" {
+		return "", errors.New("displayName no puede estar vacío")
+	}
+
+	// Extraer las iniciales del displayName
+	initials := s.extractInitials(displayName)
+	if initials == "" {
+		// Si no hay iniciales válidas, usar la primera letra del displayName
+		initials = strings.ToUpper(string(displayName[0]))
+	}
+
+	// Generar el avatar usando govatar
+	avatar, err := govatar.GenerateForUsername(govatar.MALE, initials)
+	if err != nil {
+		return "", fmt.Errorf("error generando avatar: %v", err)
+	}
+
+	// Convertir la imagen a bytes
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, avatar); err != nil {
+		return "", fmt.Errorf("error codificando avatar: %v", err)
+	}
+
+	// Subir a Cloudinary
+	uploadParams := uploader.UploadParams{
+		Folder:    "avatars",
+		PublicID:  fmt.Sprintf("avatar_%s", userID),
+		Overwrite: func(b bool) *bool { return &b }(true),
+	}
+
+	result, err := s.cld.Upload.Upload(ctx, &buf, uploadParams)
+	if err != nil {
+		return "", fmt.Errorf("error subiendo avatar a Cloudinary: %v", err)
+	}
+
+	return result.SecureURL, nil
+}
+
+// extractInitials extrae las iniciales de un nombre completo
+func (s *AuthService) extractInitials(name string) string {
+	words := strings.Fields(strings.TrimSpace(name))
+	if len(words) == 0 {
+		return ""
+	}
+
+	var initials strings.Builder
+	for _, word := range words {
+		if len(word) > 0 {
+			initials.WriteString(strings.ToUpper(string(word[0])))
+		}
+	}
+
+	return initials.String()
+}
+
 func (s *AuthService) SaveUserInFirestore(ctx context.Context, user *auth.UserRecord) error {
+	// Generar y subir avatar automáticamente
+	avatarURL, err := s.GenerateAndUploadAvatar(ctx, user.DisplayName, user.UID)
+	if err != nil {
+		// Si falla la generación del avatar, usar una imagen por defecto
+		avatarURL = "https://res.cloudinary.com/ddto2dyb4/image/upload/v1745378134/samples/sheep.jpg"
+		fmt.Printf("⚠️ Error generando avatar para %s: %v. Usando imagen por defecto.\n", user.DisplayName, err)
+	}
+
 	// Define el documento a almacenar
 	doc := map[string]interface{}{
-		"uid":       user.UID,
-		"username":  user.DisplayName,
-		"email":     user.Email,
-		"createdAt": time.Now(),
+		"uid":           user.UID,
+		"username":      user.DisplayName,
+		"email":         user.Email,
+		"createdAt":     time.Now(),
+		"profile_photo": avatarURL,
+		"banner_image":  "https://res.cloudinary.com/ddto2dyb4/image/upload/v1745378134/samples/sheep.jpg",
 	}
 
 	// Guarda el documento en la colección "users", usando el UID como documento ID
-	_, err := s.firebase.Firestore.Collection("users").Doc(user.UID).Set(ctx, doc)
+	_, err = s.firebase.Firestore.Collection("users").Doc(user.UID).Set(ctx, doc)
 	return err
 }
 
