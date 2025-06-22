@@ -273,3 +273,51 @@ func (c *PostController) GetByID(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(post)
 }
+
+func (c *PostController) GetByAuthorID(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+	authorID := r.URL.Query().Get("author_id")
+	if authorID == "" {
+		http.Error(w, "ID de autor es obligatorio", http.StatusBadRequest)
+		return
+	}
+
+	posts, err := c.postUsecase.GetPostsByAuthorID(ctx, authorID)
+	if err != nil {
+		log.Printf("Error obteniendo posts del autor: %v", err)
+		http.Error(w, "No se pudieron obtener los posts", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(posts)
+}
+
+// @Summary Obtener posts votados por el usuario
+// @Description Obtiene una lista de todos los posts que el usuario ha votado (like o dislike).
+// @Tags Post
+// @Accept json
+// @Produce json
+// @Success 200 {array} models.Post "Lista de posts votados"
+// @Failure 500 {object} map[string]string "Error interno del servidor"
+// @Router /api/posts/liked [get]
+func (c *PostController) GetPostsILiked(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+	userID := r.URL.Query().Get("user_id")
+	if userID == "" {
+		http.Error(w, "user_id es obligatorio", http.StatusBadRequest)
+		return
+	}
+
+	posts, err := c.postUsecase.GetPostsILiked(ctx, userID)
+	if err != nil {
+		log.Printf("Error obteniendo posts votados: %v", err)
+		http.Error(w, "No se pudieron obtener los posts votados", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(posts)
+}

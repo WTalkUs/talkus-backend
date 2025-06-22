@@ -87,6 +87,8 @@ func main() {
 
 	protectedRouter.HandleFunc("/profile", authHandler.GetUserProfile)
 	protectedRouter.HandleFunc("/change-email", authHandler.ChangeEmail).Methods("PUT")
+	protectedRouter.HandleFunc("/posts/author", postController.GetByAuthorID).Methods("GET")
+	protectedRouter.HandleFunc("/posts/liked", postController.GetPostsILiked).Methods("GET")
 	protectedRouter.HandleFunc("/change-password", authHandler.ChangePassword).Methods("PUT")
 	protectedRouter.HandleFunc("/edit-profile", userController.EditUserProfile).Methods("PUT")
 	protectedRouter.HandleFunc("/posts", postController.Delete).Methods("DELETE")

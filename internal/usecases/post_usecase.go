@@ -8,37 +8,44 @@ import (
 )
 
 type PostUsecase struct {
-    repo *repositories.PostRepository
+	repo *repositories.PostRepository
 }
 
 func NewPostUsecase(repo *repositories.PostRepository) *PostUsecase {
-    return &PostUsecase{repo: repo}
+	return &PostUsecase{repo: repo}
 }
 
 func (u *PostUsecase) GetPostByID(ctx context.Context, id string) (*models.PostWithAuthor, error) {
-    post, err := u.repo.GetPostByID(ctx, id)
-    if err != nil {
-        return nil, err
-    }
-    return post, nil
+	post, err := u.repo.GetPostByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return post, nil
 }
 
 func (u *PostUsecase) GetAllPosts(ctx context.Context) ([]*models.Post, error) {
-    return u.repo.GetAll(ctx)
+	return u.repo.GetAll(ctx)
 }
 
 func (u *PostUsecase) CreatePost(ctx context.Context, p *models.Post) (*models.Post, error) {
-    if err := u.repo.Create(ctx, p); err != nil {
-        return nil, err
-    }
-    return p, nil
+	if err := u.repo.Create(ctx, p); err != nil {
+		return nil, err
+	}
+	return p, nil
 }
 
 func (u *PostUsecase) DeletePost(ctx context.Context, id string) error {
-    return u.repo.Delete(ctx, id)
+	return u.repo.Delete(ctx, id)
+}
+
+func (u *PostUsecase) GetPostsByAuthorID(ctx context.Context, authorID string) ([]*models.Post, error) {
+	return u.repo.GetPostsByAuthorID(ctx, authorID)
 }
 
 func (u *PostUsecase) EditPost(ctx context.Context, id string, p *models.Post) error {
-    return u.repo.Edit(ctx, id, p)
+	return u.repo.Edit(ctx, id, p)
 }
 
+func (u *PostUsecase) GetPostsILiked(ctx context.Context, userID string) ([]*models.Post, error) {
+	return u.repo.GetPostsILiked(ctx, userID)
+}
