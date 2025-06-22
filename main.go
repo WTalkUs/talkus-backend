@@ -39,7 +39,7 @@ func main() {
 		log.Fatalf("Error iniciando Cloudinary: %v", err)
 	}
 	// Servicios de autenticación
-	authService := service.NewAuthService(firebaseApp)
+	authService := service.NewAuthService(firebaseApp, cld)
 	authHandler := handlers.NewAuthHandler(authService)
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 
