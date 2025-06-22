@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"cloud.google.com/go/firestore"
@@ -158,12 +159,132 @@ func (r *PostRepository) Edit(ctx context.Context, id string, p *models.Post) er
 	return nil
 }
 
-func (r *PostRepository) IncrementReaction(
-	ctx context.Context,
-	postID string,
-	reactionType string,
-	delta int,
-) error {
+func (r *PostRepository) GetPostsByAuthorID(ctx context.Context, authorID string) ([]*models.Post, error) {
+	iter := r.db.
+		Collection("posts").
+		Where("author_id", "==", authorID).
+		Documents(ctx)
+	defer iter.Stop()
+
+	posts := make([]*models.Post, 0)
+
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("error al iterar posts del autor: %w", err)
+		}
+
+		var p models.Post
+		if err := doc.DataTo(&p); err != nil {
+			return nil, fmt.Errorf("error al decodificar post: %w", err)
+		}
+		p.ID = doc.Ref.ID
+
+		// Obtener información del autor
+		if p.AuthorID != "" {
+			userDoc, err := r.db.Collection("users").Doc(p.AuthorID).Get(ctx)
+			if err == nil {
+				var user models.User
+				if err := userDoc.DataTo(&user); err == nil {
+					user.UID = userDoc.Ref.ID
+					p.Author = &user
+				}
+			}
+		}
+
+		posts = append(posts, &p)
+	}
+
+	// Ordenar por fecha de creación (más recientes primero)
+	sort.Slice(posts, func(i, j int) bool {
+		return posts[i].CreatedAt.After(posts[j].CreatedAt)
+	})
+
+	return posts, nil
+}
+
+func (r *PostRepository) GetPostsILiked(ctx context.Context, userID string) ([]*models.Post, error) {
+	// Primero obtener todos los votos del usuario
+	votesIter := r.db.
+		Collection("votes").
+		Where("user_id", "==", userID).
+		Documents(ctx)
+	defer votesIter.Stop()
+
+	// Recolectar los IDs de posts votados con like
+	postIDs := make(map[string]bool)
+	for {
+		doc, err := votesIter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("error al iterar votos del usuario: %w", err)
+		}
+
+		var vote struct {
+			PostID string `firestore:"post_id"`
+			Type   string `firestore:"type"`
+		}
+		if err := doc.DataTo(&vote); err != nil {
+			return nil, fmt.Errorf("error al decodificar voto: %w", err)
+		}
+
+		// Solo incluir posts que tengan like y no sean comentarios
+		if vote.PostID != "" && vote.Type == "like" {
+			postIDs[vote.PostID] = true
+		}
+	}
+
+	// Si no hay posts votados, retornar lista vacía
+	if len(postIDs) == 0 {
+		return []*models.Post{}, nil
+	}
+
+	// Obtener los posts correspondientes
+	posts := make([]*models.Post, 0)
+	for postID := range postIDs {
+		postDoc, err := r.db.Collection("posts").Doc(postID).Get(ctx)
+		if err != nil {
+			// Si no se puede obtener el post, continuar con el siguiente
+			fmt.Printf("Error obteniendo post %s: %v\n", postID, err)
+			continue
+		}
+
+		var p models.Post
+		if err := postDoc.DataTo(&p); err != nil {
+			fmt.Printf("Error decodificando post %s: %v\n", postID, err)
+			continue
+		}
+		p.ID = postDoc.Ref.ID
+
+		// Obtener información del autor
+		if p.AuthorID != "" {
+			userDoc, err := r.db.Collection("users").Doc(p.AuthorID).Get(ctx)
+			if err == nil {
+				var user models.User
+				if err := userDoc.DataTo(&user); err == nil {
+					user.UID = userDoc.Ref.ID
+					p.Author = &user
+				}
+			}
+		}
+
+		posts = append(posts, &p)
+	}
+
+	// Ordenar por fecha de creación (más recientes primero)
+	sort.Slice(posts, func(i, j int) bool {
+		return posts[i].CreatedAt.After(posts[j].CreatedAt)
+	})
+
+	return posts, nil
+}
+
+func (r *PostRepository) IncrementReaction(ctx context.Context, postID string, reactionType string, delta int) error {
 	field := "likes"
 	if reactionType == "dislike" {
 		field = "dislikes"
