@@ -94,7 +94,6 @@ func (r *PostRepository) GetAll(ctx context.Context) ([]*models.Post, error) {
 			fmt.Printf("Error al buscar el autor %s: %v\n", authorID, err)
 			continue
 		}
-
 		var user models.User
 		if err := userDoc.DataTo(&user); err != nil {
 			fmt.Printf("Error al decodificar usuario %s: %v\n", authorID, err)
