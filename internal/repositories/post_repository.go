@@ -294,3 +294,91 @@ func (r *PostRepository) IncrementReaction(ctx context.Context, postID string, r
 	})
 	return err
 }
+
+// Guarda un post para un usuario en la colección userSavedPosts
+func (r *PostRepository) SavePostForUser(ctx context.Context, userID, postID string) error {
+    _, _, err := r.db.
+        Collection("userSavedPosts").
+        Add(ctx, map[string]interface{}{
+            "user_id":  userID,
+            "post_id":  postID,
+            "saved_at": time.Now(),
+        })
+    return err
+}
+
+// Elimina el bookmark de un post para un usuario
+func (r *PostRepository) RemoveSavedPost(ctx context.Context, userID, postID string) error {
+    q := r.db.
+        Collection("userSavedPosts").
+        Where("user_id", "==", userID).
+        Where("post_id", "==", postID).
+        Limit(1)
+    docs, err := q.Documents(ctx).GetAll()
+    if err != nil {
+        return err
+    }
+    if len(docs) == 0 {
+        return nil // nada que borrar
+    }
+	_, err = docs[0].Ref.Delete(ctx)
+	return err
+}
+
+// Lista todos los posts guardados por un usuario
+func (r *PostRepository) GetSavedPostsByUser(ctx context.Context, userID string) ([]*models.Post, error) {
+    // 1) obtenemos los documentos de userSavedPosts
+    saveIter := r.db.
+        Collection("userSavedPosts").
+        Where("user_id", "==", userID).
+        OrderBy("saved_at", firestore.Desc).
+        Documents(ctx)
+    defer saveIter.Stop()
+
+    var postIDs []string
+    for {
+        doc, err := saveIter.Next()
+        if err == iterator.Done {
+            break
+        }
+        if err != nil {
+            return nil, fmt.Errorf("error iterando guardados: %w", err)
+        }
+        data := doc.Data()
+        if pid, ok := data["post_id"].(string); ok {
+            postIDs = append(postIDs, pid)
+        }
+    }
+
+    // 2) por cada postID, obtenemos el post completo
+    var posts []*models.Post
+    for _, pid := range postIDs {
+        postDoc, err := r.db.Collection("posts").Doc(pid).Get(ctx)
+        if err != nil {
+            // si no existe, simplemente lo saltamos
+            continue
+        }
+        var p models.Post
+        if err := postDoc.DataTo(&p); err != nil {
+            continue
+        }
+        p.ID = postDoc.Ref.ID
+        // (opcional) cargar autor si lo deseas, igual que en GetAll
+        posts = append(posts, &p)
+    }
+
+    return posts, nil
+}
+
+func (r *PostRepository) IsPostSavedByUser(ctx context.Context, userID, postID string) (bool, error) {
+    q := r.db.
+        Collection("userSavedPosts").
+        Where("user_id", "==", userID).
+        Where("post_id", "==", postID).
+        Limit(1)
+    docs, err := q.Documents(ctx).GetAll()
+    if err != nil {
+        return false, fmt.Errorf("error checking saved post: %w", err)
+    }
+    return len(docs) > 0, nil
+}

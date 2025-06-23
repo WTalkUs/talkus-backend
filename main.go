@@ -94,6 +94,10 @@ func main() {
 	protectedRouter.HandleFunc("/posts", postController.Delete).Methods("DELETE")
 	protectedRouter.HandleFunc("/posts", postController.Edit).Methods("PUT")
 	protectedRouter.HandleFunc("/posts/{id}/react", voteController.React).Methods("POST")
+	protectedRouter.HandleFunc("/posts/{post_id}/save", postController.SavePost).Methods("POST")
+	protectedRouter.HandleFunc("/posts/{post_id}/unsave", postController.UnsavePost).Methods("DELETE")
+	protectedRouter.HandleFunc("/post/{post_id}/saved", postController.IsSaved).Methods("GET")
+	protectedRouter.HandleFunc("/posts/saved", postController.GetSavedPosts).Methods("GET")
 
 	// rutas para subforos
 	protectedRouter.HandleFunc("/subforos", subforoController.Create).Methods("POST")
