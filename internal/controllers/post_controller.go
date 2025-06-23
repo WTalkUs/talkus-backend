@@ -321,3 +321,75 @@ func (c *PostController) GetPostsILiked(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(posts)
 }
+
+// @Summary Guarda un post en favoritos
+// @Router /api/posts/{post_id}/save [post]
+func (c *PostController) SavePost(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    postID := vars["post_id"]
+    userID := r.URL.Query().Get("user_id") // o bien sacarlo del JWT
+    if postID == "" || userID == "" {
+        http.Error(w, "post_id y user_id son obligatorios", http.StatusBadRequest)
+        return
+    }
+    if err := c.postUsecase.SavePost(r.Context(), userID, postID); err != nil {
+        log.Printf("Error guardando post: %v", err)
+        http.Error(w, "No se pudo guardar el post", http.StatusInternalServerError)
+        return
+    }
+    w.WriteHeader(http.StatusNoContent)
+}
+
+// @Summary Quita un post de favoritos
+// @Router /api/posts/{post_id}/save [delete]
+func (c *PostController) UnsavePost(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    postID := vars["post_id"]
+    userID := r.URL.Query().Get("user_id")
+    if postID == "" || userID == "" {
+        http.Error(w, "post_id y user_id son obligatorios", http.StatusBadRequest)
+        return
+    }
+    if err := c.postUsecase.UnsavePost(r.Context(), userID, postID); err != nil {
+        log.Printf("Error quitando guardado: %v", err)
+        http.Error(w, "No se pudo quitar el guardado", http.StatusInternalServerError)
+        return
+    }
+    w.WriteHeader(http.StatusNoContent)
+}
+
+// @Summary Lista los posts guardados por un usuario
+// @Router /api/posts/saved [get]
+func (c *PostController) GetSavedPosts(w http.ResponseWriter, r *http.Request) {
+    userID := r.URL.Query().Get("user_id")
+    if userID == "" {
+        http.Error(w, "user_id es obligatorio", http.StatusBadRequest)
+        return
+    }
+    posts, err := c.postUsecase.GetSavedPosts(r.Context(), userID)
+    if err != nil {
+        log.Printf("Error obteniendo guardados: %v", err)
+        http.Error(w, "No se pudieron obtener los posts guardados", http.StatusInternalServerError)
+        return
+    }
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(posts)
+}
+
+func (c *PostController) IsSaved(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    postID := vars["post_id"]
+    userID := r.URL.Query().Get("user_id")
+    if postID == "" || userID == "" {
+        http.Error(w, "post_id y user_id son obligatorios", http.StatusBadRequest)
+        return
+    }
+    saved, err := c.postUsecase.IsPostSaved(r.Context(), userID, postID)
+    if err != nil {
+        log.Printf("Error comprobando saved: %v", err)
+        http.Error(w, "Error interno", http.StatusInternalServerError)
+        return
+    }
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(map[string]bool{"saved": saved})
+}
