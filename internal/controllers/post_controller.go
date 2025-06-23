@@ -366,14 +366,19 @@ func (c *PostController) GetSavedPosts(w http.ResponseWriter, r *http.Request) {
         http.Error(w, "user_id es obligatorio", http.StatusBadRequest)
         return
     }
-    posts, err := c.postUsecase.GetSavedPosts(r.Context(), userID)
-    if err != nil {
-        log.Printf("Error obteniendo guardados: %v", err)
-        http.Error(w, "No se pudieron obtener los posts guardados", http.StatusInternalServerError)
-        return
-    }
-    w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(posts)
+	posts, err := c.postUsecase.GetSavedPosts(r.Context(), userID)
+	if err != nil {
+		log.Printf("Error obteniendo guardados: %v", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "No se pudieron obtener los posts guardados",
+		})
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(posts)
 }
 
 func (c *PostController) IsSaved(w http.ResponseWriter, r *http.Request) {

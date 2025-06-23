@@ -327,7 +327,7 @@ func (r *PostRepository) RemoveSavedPost(ctx context.Context, userID, postID str
 
 // Lista todos los posts guardados por un usuario
 func (r *PostRepository) GetSavedPostsByUser(ctx context.Context, userID string) ([]*models.Post, error) {
-    // 1) obtenemos los documentos de userSavedPosts
+    // Obtener los IDs de posts guardados
     saveIter := r.db.
         Collection("userSavedPosts").
         Where("user_id", "==", userID).
@@ -344,27 +344,63 @@ func (r *PostRepository) GetSavedPostsByUser(ctx context.Context, userID string)
         if err != nil {
             return nil, fmt.Errorf("error iterando guardados: %w", err)
         }
+
         data := doc.Data()
-        if pid, ok := data["post_id"].(string); ok {
+        pid, ok := data["post_id"].(string)
+        if ok {
             postIDs = append(postIDs, pid)
         }
     }
 
-    // 2) por cada postID, obtenemos el post completo
-    var posts []*models.Post
-    for _, pid := range postIDs {
-        postDoc, err := r.db.Collection("posts").Doc(pid).Get(ctx)
+    //  Obtener los posts
+    posts := make([]*models.Post, 0)
+    authorIDs := make(map[string]bool)
+
+    for _, postID := range postIDs {
+        postDoc, err := r.db.Collection("posts").Doc(postID).Get(ctx)
         if err != nil {
-            // si no existe, simplemente lo saltamos
+            fmt.Printf("Post no encontrado: %s\n", postID)
             continue
         }
-        var p models.Post
-        if err := postDoc.DataTo(&p); err != nil {
+
+        var post models.Post
+        if err := postDoc.DataTo(&post); err != nil {
+            fmt.Printf("Error decodificando post %s: %v\n", postID, err)
             continue
         }
-        p.ID = postDoc.Ref.ID
-        // (opcional) cargar autor si lo deseas, igual que en GetAll
-        posts = append(posts, &p)
+
+        post.ID = postDoc.Ref.ID
+        posts = append(posts, &post)
+
+        if post.AuthorID != "" {
+            authorIDs[post.AuthorID] = true
+        }
+    }
+
+    //  Obtener los autores
+    authorInfo := make(map[string]*models.User)
+    for aid := range authorIDs {
+        userDoc, err := r.db.Collection("users").Doc(aid).Get(ctx)
+        if err != nil {
+            fmt.Printf("No se encontró autor: %s\n", aid)
+            continue
+        }
+
+        var user models.User
+        if err := userDoc.DataTo(&user); err != nil {
+            fmt.Printf("Error decodificando autor %s: %v\n", aid, err)
+            continue
+        }
+
+        user.UID = userDoc.Ref.ID
+        authorInfo[aid] = &user
+    }
+
+    // Asociar autor a cada post
+    for _, post := range posts {
+        if author, ok := authorInfo[post.AuthorID]; ok {
+            post.Author = author
+        }
     }
 
     return posts, nil
