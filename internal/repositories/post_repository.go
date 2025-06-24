@@ -121,11 +121,12 @@ func (r *PostRepository) Create(ctx context.Context, p *models.Post) error {
 		"author_id":  p.AuthorID,
 		"tags":       p.Tags,
 		"is_flagged": p.IsFlagged,
-		//"forum_id":  p.ForumID,
+		"forum_id":   p.ForumID,
 		"likes":      p.Likes,
 		"dislikes":   p.Dislikes,
 		"image_url":  p.ImageURL,
 		"image_id":   p.ImageID,
+		"verdict":    p.Verdict,
 		"created_at": p.CreatedAt,
 	})
 	if err != nil {

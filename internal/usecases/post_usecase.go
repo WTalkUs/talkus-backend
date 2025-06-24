@@ -5,14 +5,19 @@ import (
 
 	"github.com/JuanPidarraga/talkus-backend/internal/models"
 	"github.com/JuanPidarraga/talkus-backend/internal/repositories"
+	"github.com/JuanPidarraga/talkus-backend/internal/service"
 )
 
 type PostUsecase struct {
-	repo *repositories.PostRepository
+	repo        *repositories.PostRepository
+	subforoRepo *repositories.SubforoRepository
 }
 
-func NewPostUsecase(repo *repositories.PostRepository) *PostUsecase {
-	return &PostUsecase{repo: repo}
+func NewPostUsecase(repo *repositories.PostRepository, subforoRepo *repositories.SubforoRepository) *PostUsecase {
+	return &PostUsecase{
+		repo:        repo,
+		subforoRepo: subforoRepo,
+	}
 }
 
 func (u *PostUsecase) GetPostByID(ctx context.Context, id string) (*models.PostWithAuthor, error) {
@@ -28,6 +33,28 @@ func (u *PostUsecase) GetAllPosts(ctx context.Context) ([]*models.Post, error) {
 }
 
 func (u *PostUsecase) CreatePost(ctx context.Context, p *models.Post) (*models.Post, error) {
+	// Si hay un forum_id, calcular el veredicto usando IA
+	if p.ForumID != "" {
+		// Obtener la descripción del subforo
+		subforo, err := u.subforoRepo.GetSubforoByID(ctx, p.ForumID)
+		if err != nil {
+			// Si no se puede obtener el subforo, continuar sin veredicto
+			p.Verdict = "No se pudo analizar el contenido"
+		} else {
+			// Calcular similitud y obtener veredicto
+			_, verdict, err := service.CalculateTextSimilarity(p.Content, subforo.Description)
+			if err != nil {
+				// Si hay error en el análisis, continuar sin veredicto
+				p.Verdict = "Error en el análisis de contenido"
+			} else {
+				p.Verdict = verdict
+			}
+		}
+	} else {
+		// Si no hay forum_id, no se puede analizar
+		p.Verdict = "No aplicable"
+	}
+
 	if err := u.repo.Create(ctx, p); err != nil {
 		return nil, err
 	}
