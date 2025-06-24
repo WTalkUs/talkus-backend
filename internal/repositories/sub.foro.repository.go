@@ -80,6 +80,7 @@ func (r *SubforoRepository) Create(ctx context.Context, subforo *models.Subforo)
 		"created_at":  subforo.CreatedAt,
 		"banner_url":  subforo.BannerURL,
 		"icon_url":    subforo.IconURL,
+		"members":     subforo.Members,
 	})
 	if err != nil {
 		return err
@@ -123,4 +124,22 @@ func (r *SubforoRepository) EditSubforo(ctx context.Context, id string, subforo 
 	}
 
 	return updatedSubforo, nil
+}
+
+// Unir usuario a subforo
+func (r *SubforoRepository) JoinSubforo(ctx context.Context, subforoID, userID string) error {
+    _, err := r.db.Collection("subforos").Doc(subforoID).Update(ctx, []firestore.Update{
+        {Path: "members", Value: firestore.ArrayUnion(userID)},
+        {Path: "updated_at", Value: time.Now()},
+    })
+    return err
+}
+
+// Salir de subforo
+func (r *SubforoRepository) LeaveSubforo(ctx context.Context, subforoID, userID string) error {
+    _, err := r.db.Collection("subforos").Doc(subforoID).Update(ctx, []firestore.Update{
+        {Path: "members", Value: firestore.ArrayRemove(userID)},
+        {Path: "updated_at", Value: time.Now()},
+    })
+    return err
 }

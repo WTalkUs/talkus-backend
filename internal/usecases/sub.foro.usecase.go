@@ -46,3 +46,11 @@ func (u *SubforoUsecase) DeactivateSubforo(ctx context.Context, id string) (*mod
 func (u *SubforoUsecase) EditSubforo(ctx context.Context, id string, subforo *models.Subforo) (*models.Subforo, error) {
 	return u.repo.EditSubforo(ctx, id, subforo)
 }
+
+func (u *SubforoUsecase) JoinSubforo(ctx context.Context, subforoID, userID string) error {
+    return u.repo.JoinSubforo(ctx, subforoID, userID)
+}
+
+func (u *SubforoUsecase) LeaveSubforo(ctx context.Context, subforoID, userID string) error {
+    return u.repo.LeaveSubforo(ctx, subforoID, userID)
+}

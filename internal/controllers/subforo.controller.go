@@ -70,18 +70,26 @@ func (c *SubforoController) GetAll(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	subforos, err := c.subforoUsecase.GetAllSubforos(ctx)
 	if err != nil {
-		log.Printf("Error obteniendo subforos: %v", err)
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Error interno del servidor",
-		})
-		return
+			log.Printf("Error obteniendo subforos: %v", err)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{
+					"error": "Error interno del servidor",
+			})
+			return
+	}
+
+	// Filtrar solo los subforos activos
+	activeSubforos := make([]*models.Subforo, 0)
+	for _, s := range subforos {
+		if s.IsActive {
+			activeSubforos = append(activeSubforos, s)
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(subforos)
+	json.NewEncoder(w).Encode(activeSubforos)
 }
 
 func (c *SubforoController) GetByID(w http.ResponseWriter, r *http.Request) {
@@ -364,4 +372,60 @@ func (c *SubforoController) Edit(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(updatedSubforo)
+}
+
+// @Summary Unirse a un subforo
+// @Description Permite a un usuario unirse a un subforo por su ID.
+// @Tags Subforo
+// @Accept json
+// @Produce json
+// @Param id path string true "ID del subforo"
+// @Success 200 {object} map[string]string "Unido al subforo correctamente"
+// @Failure 400 {object} map[string]string "ID de subforo es obligatorio"
+// @Failure 500 {object} map[string]string "No se pudo unir al subforo
+// Unirse a un subforo
+func (c *SubforoController) JoinSubforo(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    subforoID := vars["id"]
+    if subforoID == "" {
+        respondWithError(w, http.StatusBadRequest, "ID de subforo es obligatorio")
+        return
+    }
+    token := r.Context().Value(middleware.AuthUserKey).(*auth.Token)
+    userID := token.UID
+
+    err := c.subforoUsecase.JoinSubforo(r.Context(), subforoID, userID)
+    if err != nil {
+        respondWithError(w, http.StatusInternalServerError, "No se pudo unir al subforo")
+        return
+    }
+    respondWithJSON(w, http.StatusOK, map[string]string{"message": "Unido al subforo correctamente"})
+}
+
+// @Summary Salirse de un subforo
+// @Description Permite a un usuario salir de un subforo por su ID.
+// @Tags Subforo
+// @Accept json
+// @Produce json
+// @Param id path string true "ID del subforo"
+// @Success 200 {object} map[string]string "Saliste del subforo correctamente"
+// @Failure 400 {object} map[string]string "ID de subforo es obligatorio"
+// @Failure 500 {object} map[string]string "No se pudo salir del subforo"
+// Salirse de un subforo
+func (c *SubforoController) LeaveSubforo(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    subforoID := vars["id"]
+    if subforoID == "" {
+        respondWithError(w, http.StatusBadRequest, "ID de subforo es obligatorio")
+        return
+    }
+    token := r.Context().Value(middleware.AuthUserKey).(*auth.Token)
+    userID := token.UID
+
+    err := c.subforoUsecase.LeaveSubforo(r.Context(), subforoID, userID)
+    if err != nil {
+        respondWithError(w, http.StatusInternalServerError, "No se pudo salir del subforo")
+        return
+    }
+    respondWithJSON(w, http.StatusOK, map[string]string{"message": "Saliste del subforo correctamente"})
 }
