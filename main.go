@@ -65,7 +65,6 @@ func main() {
 	voteUsecase := usecases.NewVoteUsecase(voteRepo, postRepo)
 	voteController := controllers.NewVoteController(voteUsecase)
 
-	subforoRepo := repositories.NewSubforoRepository(firebaseApp.Firestore)
 	subforoUsecase := usecases.NewSubforoUsecase(subforoRepo)
 	subforoController := controllers.NewSubforoController(subforoUsecase, cld)
 
