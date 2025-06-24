@@ -35,6 +35,7 @@ func main() {
 		os.Getenv("CLOUDINARY_API_KEY"),
 		os.Getenv("CLOUDINARY_API_SECRET"),
 	)
+
 	if err != nil {
 		log.Fatalf("Error iniciando Cloudinary: %v", err)
 	}
@@ -67,6 +68,10 @@ func main() {
 	subforoUsecase := usecases.NewSubforoUsecase(subforoRepo)
 	subforoController := controllers.NewSubforoController(subforoUsecase)
 
+	// Use case y controlador de IA
+	aiUsecase := usecases.NewAIUsecase()
+	aiController := controllers.NewAIController(aiUsecase)
+
 	// Usar Gorilla Mux para definir rutas
 	router := mux.NewRouter()
 
@@ -80,9 +85,11 @@ func main() {
 	publicRouter.HandleFunc("/votes/user", voteController.GetUserVote).Methods("GET")
 	publicRouter.HandleFunc("/subforos", subforoController.GetAll).Methods("GET")
 	publicRouter.HandleFunc("/comments/post/{postId}", commentController.GetCommentsByPostID).Methods("GET")
+
 	protectedRouter := router.PathPrefix("/api").Subrouter()
 	protectedRouter.Use(authMiddleware.Authenticate)
 
+	protectedRouter.HandleFunc("/ai/validate-content", aiController.ValidateContentHandler).Methods("POST")
 	protectedRouter.HandleFunc("/profile", authHandler.GetUserProfile)
 	protectedRouter.HandleFunc("/change-email", authHandler.ChangeEmail).Methods("PUT")
 	protectedRouter.HandleFunc("/posts/author", postController.GetByAuthorID).Methods("GET")
