@@ -45,8 +45,7 @@ func (u *PostUsecase) CreatePost(ctx context.Context, p *models.Post) (*models.P
 			_, verdict, err := service.CalculateTextSimilarity(p.Title+" "+p.Content, subforo.Description)
 			if err != nil {
 				// Si hay error en el análisis, continuar sin veredicto
-				return nil, err
-				p.Verdict = "Error en el análisis de contenido"	
+				p.Verdict = "Error en el análisis de contenido"
 			} else {
 				p.Verdict = verdict
 			}
@@ -79,21 +78,25 @@ func (u *PostUsecase) GetPostsILiked(ctx context.Context, userID string) ([]*mod
 }
 
 func (u *PostUsecase) SavePost(ctx context.Context, userID, postID string) error {
-    return u.repo.SavePostForUser(ctx, userID, postID)
+	return u.repo.SavePostForUser(ctx, userID, postID)
 }
 
 func (u *PostUsecase) UnsavePost(ctx context.Context, userID, postID string) error {
-    return u.repo.RemoveSavedPost(ctx, userID, postID)
+	return u.repo.RemoveSavedPost(ctx, userID, postID)
 }
 
 func (u *PostUsecase) GetSavedPosts(ctx context.Context, userID string) ([]*models.Post, error) {
-    return u.repo.GetSavedPostsByUser(ctx, userID)
+	return u.repo.GetSavedPostsByUser(ctx, userID)
 }
 
 func (u *PostUsecase) IsPostSaved(ctx context.Context, userID, postID string) (bool, error) {
-    return u.repo.IsPostSavedByUser(ctx, userID, postID)
+	return u.repo.IsPostSavedByUser(ctx, userID, postID)
 }
 
 func (u *PostUsecase) GetPostsByForumID(ctx context.Context, forumID string) ([]*models.Post, error) {
-    return u.repo.GetPostsByForumID(ctx, forumID)
+	return u.repo.GetPostsByForumID(ctx, forumID)
+}
+
+func (u *PostUsecase) GetPostsByForumIDWithVerdict(ctx context.Context, forumID string, verdict string) ([]*models.Post, error) {
+	return u.repo.GetPostsByForumIDWithVerdict(ctx, forumID, verdict)
 }
