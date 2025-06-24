@@ -84,6 +84,7 @@ func main() {
 	publicRouter.HandleFunc("/post/{id}", postController.GetByID).Methods("GET")
 	publicRouter.HandleFunc("/votes/user", voteController.GetUserVote).Methods("GET")
 	publicRouter.HandleFunc("/subforos", subforoController.GetAll).Methods("GET")
+	publicRouter.HandleFunc("/subforos/{id}", subforoController.GetByID).Methods("GET")
 	publicRouter.HandleFunc("/comments/post/{postId}", commentController.GetCommentsByPostID).Methods("GET")
 	protectedRouter := router.PathPrefix("/api").Subrouter()
 	protectedRouter.Use(authMiddleware.Authenticate)
