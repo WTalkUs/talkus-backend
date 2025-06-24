@@ -80,6 +80,7 @@ func main() {
 	publicRouter.HandleFunc("/users", userController.GetUser).Methods("GET")
 	publicRouter.HandleFunc("/forgot-password", handlers.ForgotPasswordHandler(authService)).Methods("POST")
 	publicRouter.HandleFunc("/posts", postController.GetAll).Methods("GET")
+	publicRouter.HandleFunc("/posts/forum/{forum_id}", postController.GetPostsByForumID).Methods("GET")
 	publicRouter.HandleFunc("/posts", postController.Create).Methods("POST")
 	publicRouter.HandleFunc("/post/{id}", postController.GetByID).Methods("GET")
 	publicRouter.HandleFunc("/votes/user", voteController.GetUserVote).Methods("GET")

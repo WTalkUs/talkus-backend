@@ -403,3 +403,29 @@ func (c *PostController) IsSaved(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
     json.NewEncoder(w).Encode(map[string]bool{"saved": saved})
 }
+
+// @Summary Obtener posts de un subforo
+// @Description Obtiene todos los posts que pertenecen a un subforo (forum_id).
+// @Tags Post
+// @Accept json
+// @Produce json
+// @Param forum_id path string true "ID del subforo"
+// @Success 200 {array} models.Post "Lista de posts del subforo"
+// @Failure 400 {object} map[string]string "forum_id es obligatorio"
+// @Failure 500 {object} map[string]string "Error interno"
+// @Router /public/posts/forum/{forum_id} [get]
+func (c *PostController) GetPostsByForumID(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    forumID := vars["forum_id"]
+    if forumID == "" {
+        http.Error(w, "forum_id es obligatorio", http.StatusBadRequest)
+        return
+    }
+    posts, err := c.postUsecase.GetPostsByForumID(r.Context(), forumID)
+    if err != nil {
+        http.Error(w, "Error obteniendo posts del foro", http.StatusInternalServerError)
+        return
+    }
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(posts)
+}
