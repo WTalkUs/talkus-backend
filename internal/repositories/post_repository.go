@@ -298,167 +298,212 @@ func (r *PostRepository) IncrementReaction(ctx context.Context, postID string, r
 
 // Guarda un post para un usuario en la colección userSavedPosts
 func (r *PostRepository) SavePostForUser(ctx context.Context, userID, postID string) error {
-    _, _, err := r.db.
-        Collection("userSavedPosts").
-        Add(ctx, map[string]interface{}{
-            "user_id":  userID,
-            "post_id":  postID,
-            "saved_at": time.Now(),
-        })
-    return err
+	_, _, err := r.db.
+		Collection("userSavedPosts").
+		Add(ctx, map[string]interface{}{
+			"user_id":  userID,
+			"post_id":  postID,
+			"saved_at": time.Now(),
+		})
+	return err
 }
 
 // Elimina el bookmark de un post para un usuario
 func (r *PostRepository) RemoveSavedPost(ctx context.Context, userID, postID string) error {
-    q := r.db.
-        Collection("userSavedPosts").
-        Where("user_id", "==", userID).
-        Where("post_id", "==", postID).
-        Limit(1)
-    docs, err := q.Documents(ctx).GetAll()
-    if err != nil {
-        return err
-    }
-    if len(docs) == 0 {
-        return nil // nada que borrar
-    }
+	q := r.db.
+		Collection("userSavedPosts").
+		Where("user_id", "==", userID).
+		Where("post_id", "==", postID).
+		Limit(1)
+	docs, err := q.Documents(ctx).GetAll()
+	if err != nil {
+		return err
+	}
+	if len(docs) == 0 {
+		return nil // nada que borrar
+	}
 	_, err = docs[0].Ref.Delete(ctx)
 	return err
 }
 
 // Lista todos los posts guardados por un usuario
 func (r *PostRepository) GetSavedPostsByUser(ctx context.Context, userID string) ([]*models.Post, error) {
-    // Obtener los IDs de posts guardados
-    saveIter := r.db.
-        Collection("userSavedPosts").
-        Where("user_id", "==", userID).
-        OrderBy("saved_at", firestore.Desc).
-        Documents(ctx)
-    defer saveIter.Stop()
+	// Obtener los IDs de posts guardados
+	saveIter := r.db.
+		Collection("userSavedPosts").
+		Where("user_id", "==", userID).
+		OrderBy("saved_at", firestore.Desc).
+		Documents(ctx)
+	defer saveIter.Stop()
 
-    var postIDs []string
-    for {
-        doc, err := saveIter.Next()
-        if err == iterator.Done {
-            break
-        }
-        if err != nil {
-            return nil, fmt.Errorf("error iterando guardados: %w", err)
-        }
+	var postIDs []string
+	for {
+		doc, err := saveIter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("error iterando guardados: %w", err)
+		}
 
-        data := doc.Data()
-        pid, ok := data["post_id"].(string)
-        if ok {
-            postIDs = append(postIDs, pid)
-        }
-    }
+		data := doc.Data()
+		pid, ok := data["post_id"].(string)
+		if ok {
+			postIDs = append(postIDs, pid)
+		}
+	}
 
-    //  Obtener los posts
-    posts := make([]*models.Post, 0)
-    authorIDs := make(map[string]bool)
+	//  Obtener los posts
+	posts := make([]*models.Post, 0)
+	authorIDs := make(map[string]bool)
 
-    for _, postID := range postIDs {
-        postDoc, err := r.db.Collection("posts").Doc(postID).Get(ctx)
-        if err != nil {
-            fmt.Printf("Post no encontrado: %s\n", postID)
-            continue
-        }
+	for _, postID := range postIDs {
+		postDoc, err := r.db.Collection("posts").Doc(postID).Get(ctx)
+		if err != nil {
+			fmt.Printf("Post no encontrado: %s\n", postID)
+			continue
+		}
 
-        var post models.Post
-        if err := postDoc.DataTo(&post); err != nil {
-            fmt.Printf("Error decodificando post %s: %v\n", postID, err)
-            continue
-        }
+		var post models.Post
+		if err := postDoc.DataTo(&post); err != nil {
+			fmt.Printf("Error decodificando post %s: %v\n", postID, err)
+			continue
+		}
 
-        post.ID = postDoc.Ref.ID
-        posts = append(posts, &post)
+		post.ID = postDoc.Ref.ID
+		posts = append(posts, &post)
 
-        if post.AuthorID != "" {
-            authorIDs[post.AuthorID] = true
-        }
-    }
+		if post.AuthorID != "" {
+			authorIDs[post.AuthorID] = true
+		}
+	}
 
-    //  Obtener los autores
-    authorInfo := make(map[string]*models.User)
-    for aid := range authorIDs {
-        userDoc, err := r.db.Collection("users").Doc(aid).Get(ctx)
-        if err != nil {
-            fmt.Printf("No se encontró autor: %s\n", aid)
-            continue
-        }
+	//  Obtener los autores
+	authorInfo := make(map[string]*models.User)
+	for aid := range authorIDs {
+		userDoc, err := r.db.Collection("users").Doc(aid).Get(ctx)
+		if err != nil {
+			fmt.Printf("No se encontró autor: %s\n", aid)
+			continue
+		}
 
-        var user models.User
-        if err := userDoc.DataTo(&user); err != nil {
-            fmt.Printf("Error decodificando autor %s: %v\n", aid, err)
-            continue
-        }
+		var user models.User
+		if err := userDoc.DataTo(&user); err != nil {
+			fmt.Printf("Error decodificando autor %s: %v\n", aid, err)
+			continue
+		}
 
-        user.UID = userDoc.Ref.ID
-        authorInfo[aid] = &user
-    }
+		user.UID = userDoc.Ref.ID
+		authorInfo[aid] = &user
+	}
 
-    // Asociar autor a cada post
-    for _, post := range posts {
-        if author, ok := authorInfo[post.AuthorID]; ok {
-            post.Author = author
-        }
-    }
+	// Asociar autor a cada post
+	for _, post := range posts {
+		if author, ok := authorInfo[post.AuthorID]; ok {
+			post.Author = author
+		}
+	}
 
-    return posts, nil
+	return posts, nil
 }
 
 func (r *PostRepository) IsPostSavedByUser(ctx context.Context, userID, postID string) (bool, error) {
-    q := r.db.
-        Collection("userSavedPosts").
-        Where("user_id", "==", userID).
-        Where("post_id", "==", postID).
-        Limit(1)
-    docs, err := q.Documents(ctx).GetAll()
-    if err != nil {
-        return false, fmt.Errorf("error checking saved post: %w", err)
-    }
-    return len(docs) > 0, nil
+	q := r.db.
+		Collection("userSavedPosts").
+		Where("user_id", "==", userID).
+		Where("post_id", "==", postID).
+		Limit(1)
+	docs, err := q.Documents(ctx).GetAll()
+	if err != nil {
+		return false, fmt.Errorf("error checking saved post: %w", err)
+	}
+	return len(docs) > 0, nil
 }
 
 func (r *PostRepository) GetPostsByForumID(ctx context.Context, forumID string) ([]*models.Post, error) {
-    iter := r.db.
-        Collection("posts").
-        Where("forum_id", "==", forumID).
-        Documents(ctx)
-    defer iter.Stop()
-    posts := make([]*models.Post, 0)
-    for {
-        doc, err := iter.Next()
-        if err == iterator.Done {
-            break
-        }
-        if err != nil {
-            return nil, err
-        }
-        var p models.Post
-        if err := doc.DataTo(&p); err != nil {
-            continue
-        }
-        p.ID = doc.Ref.ID
+	iter := r.db.
+		Collection("posts").
+		Where("forum_id", "==", forumID).
+		Documents(ctx)
+	defer iter.Stop()
+	posts := make([]*models.Post, 0)
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		var p models.Post
+		if err := doc.DataTo(&p); err != nil {
+			continue
+		}
+		p.ID = doc.Ref.ID
 
-				// Obtener información del autor
-			if p.AuthorID != "" {
-				userDoc, err := r.db.Collection("users").Doc(p.AuthorID).Get(ctx)
-				if err == nil {
-					var user models.User
-					if err := userDoc.DataTo(&user); err == nil {
-						user.UID = userDoc.Ref.ID
-						p.Author = &user
-					}
+		// Obtener información del autor
+		if p.AuthorID != "" {
+			userDoc, err := r.db.Collection("users").Doc(p.AuthorID).Get(ctx)
+			if err == nil {
+				var user models.User
+				if err := userDoc.DataTo(&user); err == nil {
+					user.UID = userDoc.Ref.ID
+					p.Author = &user
 				}
 			}
-        posts = append(posts, &p)
-    }
-		
+		}
+		posts = append(posts, &p)
+	}
+
 	// Ordenar por fecha de creación (más recientes primero)
 	sort.Slice(posts, func(i, j int) bool {
 		return posts[i].CreatedAt.After(posts[j].CreatedAt)
 	})
 
-    return posts, nil
+	return posts, nil
+}
+
+func (r *PostRepository) GetPostsByForumIDWithVerdict(ctx context.Context, forumID string, verdict string) ([]*models.Post, error) {
+	iter := r.db.
+		Collection("posts").
+		Where("forum_id", "==", forumID).
+		Where("verdict", "==", verdict).
+		Documents(ctx)
+	defer iter.Stop()
+
+	posts := make([]*models.Post, 0)
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		var p models.Post
+		if err := doc.DataTo(&p); err != nil {
+			continue
+		}
+		p.ID = doc.Ref.ID
+
+		// Obtener información del autor
+		if p.AuthorID != "" {
+			userDoc, err := r.db.Collection("users").Doc(p.AuthorID).Get(ctx)
+			if err == nil {
+				var user models.User
+				if err := userDoc.DataTo(&user); err == nil {
+					user.UID = userDoc.Ref.ID
+					p.Author = &user
+				}
+			}
+		}
+		posts = append(posts, &p)
+	}
+
+	// Ordenar por fecha de creación (más recientes primero)
+	sort.Slice(posts, func(i, j int) bool {
+		return posts[i].CreatedAt.After(posts[j].CreatedAt)
+	})
+
+	return posts, nil
 }
