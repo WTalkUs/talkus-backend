@@ -419,3 +419,46 @@ func (r *PostRepository) IsPostSavedByUser(ctx context.Context, userID, postID s
     }
     return len(docs) > 0, nil
 }
+
+func (r *PostRepository) GetPostsByForumID(ctx context.Context, forumID string) ([]*models.Post, error) {
+    iter := r.db.
+        Collection("posts").
+        Where("forum_id", "==", forumID).
+        Documents(ctx)
+    defer iter.Stop()
+    posts := make([]*models.Post, 0)
+    for {
+        doc, err := iter.Next()
+        if err == iterator.Done {
+            break
+        }
+        if err != nil {
+            return nil, err
+        }
+        var p models.Post
+        if err := doc.DataTo(&p); err != nil {
+            continue
+        }
+        p.ID = doc.Ref.ID
+
+				// Obtener información del autor
+			if p.AuthorID != "" {
+				userDoc, err := r.db.Collection("users").Doc(p.AuthorID).Get(ctx)
+				if err == nil {
+					var user models.User
+					if err := userDoc.DataTo(&user); err == nil {
+						user.UID = userDoc.Ref.ID
+						p.Author = &user
+					}
+				}
+			}
+        posts = append(posts, &p)
+    }
+		
+	// Ordenar por fecha de creación (más recientes primero)
+	sort.Slice(posts, func(i, j int) bool {
+		return posts[i].CreatedAt.After(posts[j].CreatedAt)
+	})
+
+    return posts, nil
+}

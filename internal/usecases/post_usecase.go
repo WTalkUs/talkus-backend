@@ -42,10 +42,11 @@ func (u *PostUsecase) CreatePost(ctx context.Context, p *models.Post) (*models.P
 			p.Verdict = "No se pudo analizar el contenido"
 		} else {
 			// Calcular similitud y obtener veredicto
-			_, verdict, err := service.CalculateTextSimilarity(p.Content, subforo.Description)
+			_, verdict, err := service.CalculateTextSimilarity(p.Title+" "+p.Content, subforo.Description)
 			if err != nil {
 				// Si hay error en el análisis, continuar sin veredicto
-				p.Verdict = "Error en el análisis de contenido"
+				return nil, err
+				p.Verdict = "Error en el análisis de contenido"	
 			} else {
 				p.Verdict = verdict
 			}
@@ -91,4 +92,8 @@ func (u *PostUsecase) GetSavedPosts(ctx context.Context, userID string) ([]*mode
 
 func (u *PostUsecase) IsPostSaved(ctx context.Context, userID, postID string) (bool, error) {
     return u.repo.IsPostSavedByUser(ctx, userID, postID)
+}
+
+func (u *PostUsecase) GetPostsByForumID(ctx context.Context, forumID string) ([]*models.Post, error) {
+    return u.repo.GetPostsByForumID(ctx, forumID)
 }
