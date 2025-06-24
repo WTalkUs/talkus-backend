@@ -74,9 +74,13 @@ func (r *SubforoRepository) Create(ctx context.Context, subforo *models.Subforo)
 		"description": subforo.Description,
 		"created_by":  subforo.CreatedBy,
 		"categories":  subforo.Categories,
+		"updated_at":  subforo.CreatedAt,
 		"moderators":  subforo.Moderators,
 		"is_active":   subforo.IsActive,
 		"created_at":  subforo.CreatedAt,
+		"banner_url":  subforo.BannerURL,
+		"icon_url":    subforo.IconURL,
+		"members":     subforo.Members,
 	})
 	if err != nil {
 		return err
@@ -102,7 +106,9 @@ func (r *SubforoRepository) EditSubforo(ctx context.Context, id string, subforo 
 	_, err := r.db.Collection("subforos").Doc(id).Set(ctx, map[string]interface{}{
 		"title":       subforo.Title,
 		"description": subforo.Description,
-		"category":    subforo.Categories,
+		"categories":  subforo.Categories,
+		"banner_url":  subforo.BannerURL,
+		"icon_url":    subforo.IconURL,
 		"moderators":  subforo.Moderators,
 		"is_active":   subforo.IsActive,
 		"updated_at":  time.Now(),
@@ -118,4 +124,22 @@ func (r *SubforoRepository) EditSubforo(ctx context.Context, id string, subforo 
 	}
 
 	return updatedSubforo, nil
+}
+
+// Unir usuario a subforo
+func (r *SubforoRepository) JoinSubforo(ctx context.Context, subforoID, userID string) error {
+    _, err := r.db.Collection("subforos").Doc(subforoID).Update(ctx, []firestore.Update{
+        {Path: "members", Value: firestore.ArrayUnion(userID)},
+        {Path: "updated_at", Value: time.Now()},
+    })
+    return err
+}
+
+// Salir de subforo
+func (r *SubforoRepository) LeaveSubforo(ctx context.Context, subforoID, userID string) error {
+    _, err := r.db.Collection("subforos").Doc(subforoID).Update(ctx, []firestore.Update{
+        {Path: "members", Value: firestore.ArrayRemove(userID)},
+        {Path: "updated_at", Value: time.Now()},
+    })
+    return err
 }

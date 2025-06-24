@@ -76,3 +76,19 @@ func (u *PostUsecase) EditPost(ctx context.Context, id string, p *models.Post) e
 func (u *PostUsecase) GetPostsILiked(ctx context.Context, userID string) ([]*models.Post, error) {
 	return u.repo.GetPostsILiked(ctx, userID)
 }
+
+func (u *PostUsecase) SavePost(ctx context.Context, userID, postID string) error {
+    return u.repo.SavePostForUser(ctx, userID, postID)
+}
+
+func (u *PostUsecase) UnsavePost(ctx context.Context, userID, postID string) error {
+    return u.repo.RemoveSavedPost(ctx, userID, postID)
+}
+
+func (u *PostUsecase) GetSavedPosts(ctx context.Context, userID string) ([]*models.Post, error) {
+    return u.repo.GetSavedPostsByUser(ctx, userID)
+}
+
+func (u *PostUsecase) IsPostSaved(ctx context.Context, userID, postID string) (bool, error) {
+    return u.repo.IsPostSavedByUser(ctx, userID, postID)
+}

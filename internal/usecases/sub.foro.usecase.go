@@ -35,10 +35,22 @@ func (u *SubforoUsecase) CreateSubforo(ctx context.Context, subforo *models.Subf
 	return subforo, nil
 }
 
-func (u *SubforoUsecase) DeactivateSubforo(ctx context.Context, id string) error {
-	return u.repo.Deactivate(ctx, id)
+func (u *SubforoUsecase) DeactivateSubforo(ctx context.Context, id string) (*models.Subforo, error) {
+	err := u.repo.Deactivate(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return u.repo.GetSubforoByID(ctx, id)
 }
 
 func (u *SubforoUsecase) EditSubforo(ctx context.Context, id string, subforo *models.Subforo) (*models.Subforo, error) {
 	return u.repo.EditSubforo(ctx, id, subforo)
+}
+
+func (u *SubforoUsecase) JoinSubforo(ctx context.Context, subforoID, userID string) error {
+    return u.repo.JoinSubforo(ctx, subforoID, userID)
+}
+
+func (u *SubforoUsecase) LeaveSubforo(ctx context.Context, subforoID, userID string) error {
+    return u.repo.LeaveSubforo(ctx, subforoID, userID)
 }

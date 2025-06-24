@@ -65,8 +65,9 @@ func main() {
 	voteUsecase := usecases.NewVoteUsecase(voteRepo, postRepo)
 	voteController := controllers.NewVoteController(voteUsecase)
 
+	subforoRepo := repositories.NewSubforoRepository(firebaseApp.Firestore)
 	subforoUsecase := usecases.NewSubforoUsecase(subforoRepo)
-	subforoController := controllers.NewSubforoController(subforoUsecase)
+	subforoController := controllers.NewSubforoController(subforoUsecase, cld)
 
 	// Use case y controlador de IA
 	aiUsecase := usecases.NewAIUsecase()
@@ -85,7 +86,6 @@ func main() {
 	publicRouter.HandleFunc("/votes/user", voteController.GetUserVote).Methods("GET")
 	publicRouter.HandleFunc("/subforos", subforoController.GetAll).Methods("GET")
 	publicRouter.HandleFunc("/comments/post/{postId}", commentController.GetCommentsByPostID).Methods("GET")
-
 	protectedRouter := router.PathPrefix("/api").Subrouter()
 	protectedRouter.Use(authMiddleware.Authenticate)
 
@@ -99,12 +99,16 @@ func main() {
 	protectedRouter.HandleFunc("/posts", postController.Delete).Methods("DELETE")
 	protectedRouter.HandleFunc("/posts", postController.Edit).Methods("PUT")
 	protectedRouter.HandleFunc("/posts/{id}/react", voteController.React).Methods("POST")
+	protectedRouter.HandleFunc("/posts/{post_id}/save", postController.SavePost).Methods("POST")
+	protectedRouter.HandleFunc("/posts/{post_id}/unsave", postController.UnsavePost).Methods("DELETE")
+	protectedRouter.HandleFunc("/post/{post_id}/saved", postController.IsSaved).Methods("GET")
+	protectedRouter.HandleFunc("/posts/saved", postController.GetSavedPosts).Methods("GET")
 
 	// rutas para subforos
-
 	protectedRouter.HandleFunc("/subforos", subforoController.Create).Methods("POST")
 	protectedRouter.HandleFunc("/subforos/{id}", subforoController.Delete).Methods("DELETE")
-	protectedRouter.HandleFunc("/subforos/{id}", subforoController.GetByID).Methods("GET")
+	protectedRouter.HandleFunc("/subforos/{id}/join", subforoController.JoinSubforo).Methods("POST")
+	protectedRouter.HandleFunc("/subforos/{id}/leave", subforoController.LeaveSubforo).Methods("POST")
 	protectedRouter.HandleFunc("/subforos/{id}", subforoController.Edit).Methods("PUT")
 
 	// Rutas para Comentarios
