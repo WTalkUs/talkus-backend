@@ -48,9 +48,13 @@ func (u *SubforoUsecase) EditSubforo(ctx context.Context, id string, subforo *mo
 }
 
 func (u *SubforoUsecase) JoinSubforo(ctx context.Context, subforoID, userID string) error {
-    return u.repo.JoinSubforo(ctx, subforoID, userID)
+	return u.repo.JoinSubforo(ctx, subforoID, userID)
 }
 
 func (u *SubforoUsecase) LeaveSubforo(ctx context.Context, subforoID, userID string) error {
-    return u.repo.LeaveSubforo(ctx, subforoID, userID)
+	return u.repo.LeaveSubforo(ctx, subforoID, userID)
+}
+
+func (u *SubforoUsecase) GetSubforosByUserID(ctx context.Context, userID string) ([]*models.Subforo, error) {
+	return u.repo.GetSubforosByUserID(ctx, userID)
 }

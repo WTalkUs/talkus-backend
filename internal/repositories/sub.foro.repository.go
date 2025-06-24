@@ -128,18 +128,45 @@ func (r *SubforoRepository) EditSubforo(ctx context.Context, id string, subforo 
 
 // Unir usuario a subforo
 func (r *SubforoRepository) JoinSubforo(ctx context.Context, subforoID, userID string) error {
-    _, err := r.db.Collection("subforos").Doc(subforoID).Update(ctx, []firestore.Update{
-        {Path: "members", Value: firestore.ArrayUnion(userID)},
-        {Path: "updated_at", Value: time.Now()},
-    })
-    return err
+	_, err := r.db.Collection("subforos").Doc(subforoID).Update(ctx, []firestore.Update{
+		{Path: "members", Value: firestore.ArrayUnion(userID)},
+		{Path: "updated_at", Value: time.Now()},
+	})
+	return err
 }
 
 // Salir de subforo
 func (r *SubforoRepository) LeaveSubforo(ctx context.Context, subforoID, userID string) error {
-    _, err := r.db.Collection("subforos").Doc(subforoID).Update(ctx, []firestore.Update{
-        {Path: "members", Value: firestore.ArrayRemove(userID)},
-        {Path: "updated_at", Value: time.Now()},
-    })
-    return err
+	_, err := r.db.Collection("subforos").Doc(subforoID).Update(ctx, []firestore.Update{
+		{Path: "members", Value: firestore.ArrayRemove(userID)},
+		{Path: "updated_at", Value: time.Now()},
+	})
+	return err
+}
+
+func (r *SubforoRepository) GetSubforosByUserID(ctx context.Context, userID string) ([]*models.Subforo, error) {
+	iter := r.db.Collection("subforos").Where("members", "array-contains", userID).Documents(ctx)
+	defer iter.Stop()
+
+	subforos := make([]*models.Subforo, 0)
+
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("error al iterar subforos: %w", err)
+		}
+
+		var subforo models.Subforo
+		if err := doc.DataTo(&subforo); err != nil {
+			return nil, fmt.Errorf("error al decodificar subforo: %w", err)
+		}
+		subforo.ForumID = doc.Ref.ID
+
+		subforos = append(subforos, &subforo)
+	}
+
+	return subforos, nil
 }
