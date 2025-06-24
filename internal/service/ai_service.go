@@ -122,10 +122,10 @@ func cosineSimilarity(a, b []float64) float64 {
 // GetContentVerdict returns a verdict based on the similarity score
 func GetContentVerdict(similarity float64) string {
 	if similarity >= 0.5 {
-		return "✅ The post is relevant to the group"
+		return "The post is relevant to the group"
 	} else if similarity >= 0.35 {
-		return "⚠️ Could be related, requires review"
+		return "Could be related, requires review"
 	} else {
-		return "❌ The post is not related to the group"
+		return "The post is not related to the group"
 	}
 }

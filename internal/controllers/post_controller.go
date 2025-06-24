@@ -52,13 +52,14 @@ func (c *PostController) GetAll(w http.ResponseWriter, r *http.Request) {
 }
 
 // @Summary Crear una nueva publicación
-// @Description Permite crear una nueva publicación con un título, contenido y una imagen opcional. La imagen se sube a Cloudinary y se guarda la URL en la publicación.
+// @Description Permite crear una nueva publicación con un título, contenido y una imagen opcional. La imagen se sube a Cloudinary y se guarda la URL en la publicación. El contenido será analizado por IA para determinar su relevancia con el subforo.
 // @Tags Post
 // @Accept multipart/form-data
 // @Produce json
 // @Param title formData string true "Título de la publicación"
 // @Param content formData string true "Contenido de la publicación"
 // @Param image formData file false "Imagen para la publicación"
+// @Param forum_id formData string false "ID del subforo donde se publica"
 // @Success 201 {object} models.Post "Publicación creada exitosamente"
 // @Failure 400 {object} map[string]string "Solicitud inválida, título o contenido faltante"
 // @Failure 500 {object} map[string]string "Error interno al crear la publicación"
@@ -109,6 +110,9 @@ func (c *PostController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Obtener forum_id si se proporciona
+	forumID := r.FormValue("forum_id")
+
 	tags := []string{}
 	rawTags := r.FormValue("tags")
 	if rawTags != "" {
@@ -128,6 +132,7 @@ func (c *PostController) Create(w http.ResponseWriter, r *http.Request) {
 		ImageURL:  imageURL,
 		ImageID:   ImageID,
 		Tags:      tags,
+		ForumID:   forumID,
 		Likes:     0,
 		Dislikes:  0,
 		IsFlagged: false,

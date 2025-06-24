@@ -51,7 +51,8 @@ func main() {
 
 	// Post layer
 	postRepo := repositories.NewPostRepository(firebaseApp.Firestore)
-	postUsecase := usecases.NewPostUsecase(postRepo)
+	subforoRepo := repositories.NewSubforoRepository(firebaseApp.Firestore)
+	postUsecase := usecases.NewPostUsecase(postRepo, subforoRepo)
 	postController := controllers.NewPostController(postUsecase, cld)
 
 	// Repositorios de Comentarios
@@ -64,7 +65,6 @@ func main() {
 	voteUsecase := usecases.NewVoteUsecase(voteRepo, postRepo)
 	voteController := controllers.NewVoteController(voteUsecase)
 
-	subforoRepo := repositories.NewSubforoRepository(firebaseApp.Firestore)
 	subforoUsecase := usecases.NewSubforoUsecase(subforoRepo)
 	subforoController := controllers.NewSubforoController(subforoUsecase)
 
