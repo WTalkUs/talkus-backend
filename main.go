@@ -110,6 +110,7 @@ func main() {
 	protectedRouter.HandleFunc("/subforos/{id}/join", subforoController.JoinSubforo).Methods("POST")
 	protectedRouter.HandleFunc("/subforos/{id}/leave", subforoController.LeaveSubforo).Methods("POST")
 	protectedRouter.HandleFunc("/subforos/{id}", subforoController.Edit).Methods("PUT")
+	protectedRouter.HandleFunc("/subforos/user/{user_id}", subforoController.GetSubforosByUserID).Methods("GET")
 
 	// Rutas para Comentarios
 	protectedRouter.HandleFunc("/comments", commentController.CreateComment).Methods("POST")
