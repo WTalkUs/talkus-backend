@@ -47,6 +47,7 @@ func (r *commentRepository) CreateComment(ctx context.Context, comment *models.C
 		"updatedAt": comment.UpdatedAt,
 		"likes":     comment.Likes,
 		"dislikes":  comment.Dislikes,
+		"parentId":  comment.ParentID,
 	})
 
 	if err != nil {
@@ -350,10 +351,16 @@ func (r *commentRepository) AddReaction(ctx context.Context, commentID, userID, 
 		}
 
 		return tx.Set(docRef, map[string]interface{}{
-			"likes":     comment.Likes,
+			"authorId":  comment.AuthorID,
+			"commentID": comment.CommentID,
+			"content":   comment.Content,
+			"createdAt": comment.CreatedAt,
 			"dislikes":  comment.Dislikes,
+			"likes":     comment.Likes,
 			"reactions": comment.Reactions,
-		}, firestore.MergeAll)
+			"postId":    comment.PostID,
+			"updatedAt": comment.UpdatedAt,
+		})
 	})
 
 	if err != nil {
