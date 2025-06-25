@@ -424,6 +424,7 @@ func (r *PostRepository) GetPostsByForumID(ctx context.Context, forumID string) 
 	iter := r.db.
 		Collection("posts").
 		Where("forum_id", "==", forumID).
+		Where("is_flagged", "==", false).
 		Documents(ctx)
 	defer iter.Stop()
 	posts := make([]*models.Post, 0)
@@ -468,6 +469,7 @@ func (r *PostRepository) GetPostsByForumIDWithVerdict(ctx context.Context, forum
 		Collection("posts").
 		Where("forum_id", "==", forumID).
 		Where("verdict", "==", verdict).
+		Where("is_flagged", "==", false).
 		Documents(ctx)
 	defer iter.Stop()
 
@@ -506,4 +508,15 @@ func (r *PostRepository) GetPostsByForumIDWithVerdict(ctx context.Context, forum
 	})
 
 	return posts, nil
+}
+
+// Reporta un post marcando is_flagged como true
+func (r *PostRepository) ReportPost(ctx context.Context, postID string) error {
+	_, err := r.db.Collection("posts").Doc(postID).Update(ctx, []firestore.Update{
+		{Path: "is_flagged", Value: true},
+	})
+	if err != nil {
+		return fmt.Errorf("error al reportar el post: %w", err)
+	}
+	return nil
 }

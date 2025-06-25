@@ -446,3 +446,26 @@ func (c *PostController) GetPostsByForumIDWithVerdict(w http.ResponseWriter, r *
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(posts)
 }
+
+// @Summary Reportar un post
+// @Description Marca un post como reportado (is_flagged = true)
+// @Tags Post
+// @Param id path string true "ID del post"
+// @Success 204 "Post reportado correctamente"
+// @Failure 400 {object} map[string]string "ID de post obligatorio"
+// @Failure 500 {object} map[string]string "Error interno"
+// @Router /api/posts/{id}/report [post]
+func (c *PostController) ReportPost(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	postID := vars["id"]
+	if postID == "" {
+		http.Error(w, "id es obligatorio", http.StatusBadRequest)
+		return
+	}
+	if err := c.postUsecase.ReportPost(r.Context(), postID); err != nil {
+		log.Printf("Error reportando post: %v", err)
+		http.Error(w, "No se pudo reportar el post", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
