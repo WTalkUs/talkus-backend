@@ -118,6 +118,10 @@ func main() {
 	protectedRouter.HandleFunc("/comments", commentController.CreateComment).Methods("POST")
 	protectedRouter.HandleFunc("/comments/{commentId}", commentController.GetCommentByID).Methods("GET")
 	protectedRouter.HandleFunc("/comments/{commentId}", commentController.DeleteComment).Methods("DELETE")
+	protectedRouter.HandleFunc("/comments/{commentId}", commentController.UpdateComment).Methods("PUT")
+	protectedRouter.HandleFunc("/reply", commentController.CreateReply).Methods("POST")
+	protectedRouter.HandleFunc("/post/{postId}/tree", commentController.GetCommentTree).Methods("GET")
+	protectedRouter.HandleFunc("/{commentId}/reaction", commentController.AddReaction).Methods("POST")
 
 	// Rutas para Votos
 	protectedRouter.HandleFunc("/votes", voteController.CreateVote).Methods("POST")
