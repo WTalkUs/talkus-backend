@@ -130,6 +130,8 @@ func main() {
 	protectedRouter.HandleFunc("/votes/comment/{commentId}", voteController.GetVotesByCommentID).Methods("GET")
 	protectedRouter.HandleFunc("/votes/{voteId}", voteController.DeleteVote).Methods("DELETE")
 
+	protectedRouter.HandleFunc("/posts/{id}/report", postController.ReportPost).Methods("POST")
+
 	corsOptions := cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},

@@ -100,3 +100,7 @@ func (u *PostUsecase) GetPostsByForumID(ctx context.Context, forumID string) ([]
 func (u *PostUsecase) GetPostsByForumIDWithVerdict(ctx context.Context, forumID string, verdict string) ([]*models.Post, error) {
 	return u.repo.GetPostsByForumIDWithVerdict(ctx, forumID, verdict)
 }
+
+func (u *PostUsecase) ReportPost(ctx context.Context, postID string) error {
+	return u.repo.ReportPost(ctx, postID)
+}
