@@ -307,6 +307,15 @@ func (c *SubforoController) Edit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tags := []string{}
+	rawTags := r.FormValue("categories")
+	if rawTags != "" {
+		if err := json.Unmarshal([]byte(rawTags), &tags); err != nil {
+			http.Error(w, "tags inválidos", http.StatusBadRequest)
+			return
+		}
+	}
+
 	ctx := context.Background()
 	currentSubforo, err := c.subforoUsecase.GetSubforoByID(ctx, id)
 	if err != nil {
@@ -317,7 +326,7 @@ func (c *SubforoController) Edit(w http.ResponseWriter, r *http.Request) {
 	subforo := models.Subforo{
 		Title:       r.FormValue("title"),
 		Description: r.FormValue("description"),
-		Categories:  filterEmptyStrings(strings.Split(r.FormValue("categories"), ",")),
+		Categories:  tags,
 		Moderators:  filterEmptyStrings(strings.Split(r.FormValue("moderators"), ",")),
 		IsActive:    currentSubforo.IsActive,
 	}
